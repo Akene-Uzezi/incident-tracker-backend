@@ -17,6 +17,10 @@ func (a *application) routes() http.Handler {
 				"message": "pong",
 			})
 		})
+		authGroup := v1.Group("/auth")
+		{
+			authGroup.POST("/register", a.register)
+		}
 	}
 
 	return  g
