@@ -70,7 +70,7 @@ func(a *application) login(c *gin.Context) {
 	}
 
 	if !CompareHash(user.Password, existingUser.Password) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Credentials"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid Credentials"})
 		return
 	}
 	claims := &Claims{
@@ -84,7 +84,7 @@ func(a *application) login(c *gin.Context) {
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	tokenString, err := token.SignedString(a.jwtsecret)
+	tokenString, err := token.SignedString([]byte(a.jwtsecret))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create token"})
 		return
