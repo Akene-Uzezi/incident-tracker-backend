@@ -11,11 +11,13 @@ import (
 
 type Models struct {
 	Users UserModel
+	Incidents IncidentsModel
 }
 
 func NewModels(db *pgxpool.Pool) Models {
 	return Models{
 		Users: UserModel{DB: db},
+		Incidents: IncidentsModel{DB: db},
 	}
 }
 
