@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: issuetracker_db
+    environment:
+      POSTGRES_USER: tracker_user
+      POSTGRES_PASSWORD: tracker_password
+      POSTGRES_DB: issuetracker
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
