@@ -1,5 +1,3 @@
 .env
 tmp/
 test.sql
-createtables.sh
-login.sh

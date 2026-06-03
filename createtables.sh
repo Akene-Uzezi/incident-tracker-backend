@@ -1,0 +1,1 @@
+docker exec -i issuetracker_db psql -U tracker_user -d issuetracker < test.sql
