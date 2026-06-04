@@ -49,3 +49,12 @@ func (m *UserModel) Insert(ctx context.Context, name, email, password, role stri
 
 	return &created, nil
 }
+
+func(m *UserModel) Update(ctx context.Context, user *User) (*User, error) {
+	query := `UPDATE users SET name = $1, email = $2, role = $3 WHERE id = $4`
+	_, err := m.DB.Exec(ctx, query, user.Name, user.Email, user.Role, user.Id)
+	if err != nil {
+		return nil, fmt.Errorf("database query error: %w", err)
+	}
+	return user, nil
+}
