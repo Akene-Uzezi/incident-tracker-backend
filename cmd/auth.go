@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -49,6 +50,7 @@ func(a *application) register(c *gin.Context) {
 
 	newUser, err := a.models.Users.Insert(context, user.Name, emailClean, hashedPassword, roleClean, departmentClean)
 	if err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "unable to add user"})
 		return
 	}
