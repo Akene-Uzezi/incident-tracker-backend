@@ -46,3 +46,8 @@ func(a *application) reportIncident(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, savedIncident)
 }
+
+func(a *application) getIncidents(c *gin.Context) {
+	userRole := c.GetString("userRole")
+	c.JSON(http.StatusOK, gin.H{"role": userRole})
+}
