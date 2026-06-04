@@ -15,6 +15,7 @@ func(a *application) reportIncident(c *gin.Context) {
 		return
 	}
 
+
 	if !input.SeverityLevel.IsValid() {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid severity level provided"})
 		return
@@ -40,7 +41,7 @@ func(a *application) reportIncident(c *gin.Context) {
 
 	savedIncident, err := a.models.Incidents.Insert(context, dbIncident)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to perform database query"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to execute database query"})
 		return
 	}
 	c.JSON(http.StatusOK, savedIncident)

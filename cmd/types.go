@@ -41,10 +41,10 @@ type Claims struct {
 type SeverityLevel string
 
 const (
-	NearMiss SeverityLevel = "Near Miss"
-	Minor SeverityLevel = "Minor"
-	Major SeverityLevel = "Major"
-	Critical SeverityLevel = "Critical"
+	NearMiss SeverityLevel = "near miss"
+	Minor SeverityLevel = "minor"
+	Major SeverityLevel = "major"
+	Critical SeverityLevel = "critical"
 )
 
 func (s SeverityLevel) IsValid() bool {

@@ -14,10 +14,10 @@ type IncidentsModel struct {
 type SeverityLevel string
 
 const (
-	NearMiss SeverityLevel = "Near Miss"
-	Minor SeverityLevel = "Minor"
-	Major SeverityLevel = "Major"
-	Critical SeverityLevel = "Critical"
+	NearMiss SeverityLevel = "near miss"
+	Minor SeverityLevel = "minor"
+	Major SeverityLevel = "major"
+	Critical SeverityLevel = "critical"
 )
 
 func (s SeverityLevel) IsValid() bool {
@@ -68,7 +68,7 @@ func (m *IncidentsModel) Insert(ctx context.Context, incident *Incident) (*Incid
 			recommended_preventive_action
 		)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-		RETURNING *;
+		RETURNING reporter_name, department, position, contact_info, date_of_incident, time_of_incident, location_of_incident, type_of_incident, people_involved, description_of_incident, immediate_action_taken, injury_or_damage, severity_level, supervisor_notified, recommended_preventive_action;
 	`
 	err := m.DB.QueryRow(ctx, query,
 		incident.ReporterName,
