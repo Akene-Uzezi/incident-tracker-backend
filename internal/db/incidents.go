@@ -1,6 +1,11 @@
 package db
 
-import "github.com/jackc/pgx/v5/pgxpool"
+import (
+	"context"
+	"fmt"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+)
 
 type IncidentsModel struct {
 	DB *pgxpool.Pool
@@ -40,4 +45,68 @@ type Incident struct {
 	SeverityLevel SeverityLevel `json:"severityLevel"`
 	SupervisorNotified string `json:"supervisorNotified"`
 	RecommendedPreventiveAction string `json:"recommendedPreventiveAction"` 
+}
+
+func (m *IncidentsModel) Insert(ctx context.Context, incident *Incident) (*Incident, error) {
+	query := `
+		INSERT INTO incidents
+		(
+			reporter_name, 
+			department, 
+			position, 
+			contact_info, 
+			date_of_incident, 
+			time_of_incident, 
+			location_of_incident, 
+			type_of_incident, 
+			people_involved, 
+			description_of_incident, 
+			immediate_action_taken, 
+			injury_or_damage, 
+			severity_level, 
+			supervisor_notified, 
+			recommended_preventive_action
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+		RETURNING *;
+	`
+	err := m.DB.QueryRow(ctx, query,
+		incident.ReporterName,
+		incident.Department,
+		incident.Position,
+		incident.ContactInfo,
+		incident.DateOfIncident,
+		incident.TimeOfIncident,
+		incident.LocationOfIncident,
+		incident.TypeOfIncident,
+		incident.PeopleInvolved,
+		incident.DescriptionOfIncident,
+		incident.ImmediateActionTaken,
+		incident.InjuryOrDamage,
+		incident.SeverityLevel,
+		incident.SupervisorNotified,
+		incident.RecommendedPreventiveAction,
+	).Scan(
+		&incident.ReporterName,
+		&incident.Department,
+		&incident.Position,
+		&incident.ContactInfo,
+		&incident.DateOfIncident,
+		&incident.TimeOfIncident,
+		&incident.LocationOfIncident,
+		&incident.TypeOfIncident,
+		&incident.PeopleInvolved,
+		&incident.DescriptionOfIncident,
+		&incident.ImmediateActionTaken,
+		&incident.InjuryOrDamage,
+		&incident.SeverityLevel,
+		&incident.SupervisorNotified,
+		&incident.RecommendedPreventiveAction,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("database query error: %w", err)
+	}
+
+	return incident, nil
 }

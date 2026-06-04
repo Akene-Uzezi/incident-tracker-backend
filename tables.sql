@@ -8,7 +8,7 @@ CREATE TABLE users (
     disabled BOOLEAN NOT NULL DEFAULT FALSE
 );
 
-CREATE TABLE issues (
+CREATE TABLE incidents (
     id SERIAL PRIMARY KEY,
     reporter_name VARCHAR(255) NOT NULL,
     department VARCHAR(100) NOT NULL,
