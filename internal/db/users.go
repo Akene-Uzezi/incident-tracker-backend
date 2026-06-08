@@ -79,3 +79,12 @@ func(m *UserModel) EnableUser(ctx context.Context, user *User) (*User, error) {
 	}
 	return user, nil
 }
+
+func(m *UserModel) ResetPassword(ctx context.Context, user *User) (*User, error) {
+	query := `UPDATE users SET password = $1 WHERE id = $2`
+	_, err := m.DB.Exec(ctx, query, user.Password,user.Id)
+	if err != nil {
+		return  nil, fmt.Errorf("database query error: %w", err)
+	}
+	return user, nil
+}

@@ -106,3 +106,42 @@ func(a *application) login(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"token": tokenString, "user": existingUser})
 }
+
+func(a *application) resetPassword(c *gin.Context) {
+	context := c.Request.Context()
+	userRole := c.GetString("userRole")
+	if userRole != "superadmin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Only super admins are allowed to update a user"})
+		return
+	}
+	var req ResetRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+	emailClean := strings.TrimSpace(req.Email)
+	existingUser, err := a.models.Users.GetByEmail(context, emailClean)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error executing database query"})
+		return
+	}
+	if existingUser == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+
+	hashedPassword, err := HashPassword(req.Password)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		return
+	}
+	existingUser.Password = hashedPassword
+
+	updatedUser, err := a.models.Users.ResetPassword(context, existingUser)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+	c.JSON(http.StatusOK, updatedUser)
+}
