@@ -11,10 +11,11 @@ The Issue Tracker is a layered RESTful API built with Go that follows a clean se
 **Purpose**: Handles HTTP requests, validates input, and formats responses
 
 Components:
+- **HTTP Handlers**: Process HTTP requests, validates input, and formats responses:
 - **Route Definitions** (`routes.go`): Maps HTTP endpoints to handler functions
 - **HTTP Handlers**: Process requests and return responses:
-  - `auth.go`: Authentication endpoints (register, login)
-  - `users.go`: User management endpoints (update, disable, enable)
+  - `auth.go`: Authentication endpoints (register, login, reset password)
+  - `users.go`: User management endpoints (update, disable, enable, get user)
   - `incidents.go`: Incident reporting endpoints
   - `main.go`: Application entrypoint
   - `server.go`: HTTP server configuration

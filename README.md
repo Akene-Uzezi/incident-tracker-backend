@@ -189,11 +189,39 @@ All user management endpoints require superadmin role and authentication middlew
   
 - `PUT /auth/enable` - Enable a disabled user account
   - **Request Body**:
-    ```json
-    {
+  ```json
+  {
       "email": "string (required)"
-    }
-    ```
+  }
+  ```
+
+#### Reset Password (Superadmin Only)
+- `PUT /auth/resetpassword` - Reset a user's password
+  - **Requires**: Superadmin role
+  - **Request Body**:
+  ```json
+  {
+      "email": "string (required)",
+      "password": "string (required, min 8 characters)"
+  }
+  ```
+  - **Responses**:
+    - `200 OK`: Password successfully reset
+    - `400 Bad Request`: Invalid input data
+    - `401 Unauthorized`: User is not a superadmin
+    - `404 Not Found`: User not found
+    - `500 Internal Server Error`: Database or hashing error
+
+#### Get User
+- `GET /user` - Get user information by email
+  - **Requires**: Authentication (any authenticated user)
+  - **Query Parameters**:
+    - `email`: User's email address (required)
+  - **Responses**:
+    - `200 OK`: User information
+    - `400 Bad Request`: Email parameter missing
+    - `404 Not Found`: User not found
+    - `500 Internal Server Error`: Database error
 
 ### Incident Management Endpoints
 
@@ -215,7 +243,7 @@ All user management endpoints require superadmin role and authentication middlew
       "descriptionOfIncident": "string (required)",
       "immediateActionTaken": "string (required)",
       "injuryOrDamage": "string (required)",
-      "severityLevel": "string (required, one of: Near Miss, Minor, Major, Critical)",
+      "severityLevel": "string (required, one of: near miss, minor, major, critical)",
       "supervisorNotified": "string (required)",
       "recommendedPreventiveAction": "string (required)"
     }
@@ -272,7 +300,7 @@ Stores incident reports:
 | description_of_incident | TEXT | NOT NULL | Detailed description of the incident |
 | immediate_action_taken | TEXT | NOT NULL | Actions taken immediately after incident |
 | injury_or_damage | TEXT | NOT NULL | Details of any injury or property damage |
-| severity_level | VARCHAR(50) | NOT NULL | Severity level (Near Miss, Minor, Major, Critical) |
+| severity_level | VARCHAR(50) | NOT NULL | Severity level (near miss, minor, major, critical) |
 | supervisor_notified | VARCHAR(255) | NOT NULL | Whether supervisor was notified |
 | recommended_preventive_action | TEXT | NOT NULL | Recommended actions to prevent recurrence |
 
@@ -290,7 +318,7 @@ Stores incident reports:
 ├── tables.sql             # Database schema definition
 │
 ├── cmd/                   # Application entrypoint and handlers
-│   ├── auth.go            # Authentication handlers (register, login)
+│   ├── auth.go            # Authentication handlers (register, login, reset password)
 │   ├── incidents.go       # Incident reporting handlers
 │   ├── main.go            # Application initialization
 │   ├── middleware.go      # Authentication middleware (JWT validation)
@@ -298,7 +326,7 @@ Stores incident reports:
 │   ├── server.go          # HTTP server configuration
 │   ├── types.go           # Request/response structs and type definitions
 │   ├── utils.go           # Utility functions (password hashing)
-│   └── users.go           # User management handlers (update, disable, enable)
+│   └── users.go           # User management handlers (update, disable, enable, get user)
 │
 ├── internal/              # Private application libraries
 │   ├── db/                # Database models and connection handling
@@ -327,7 +355,7 @@ Stores incident reports:
 - **Authorization**: Role-based access control enforced via middleware
 - **Input Validation**: All incoming data is validated using Gin's binding mechanism
 - **SQL Injection Prevention**: Uses parameterized queries via PGX
-- **CORS**: Not implemented (intended for internal/API-only use)
+- **CORS**: Configured via gin-contrib/cors middleware with allowed origins from environment
 
 ## Error Handling
 

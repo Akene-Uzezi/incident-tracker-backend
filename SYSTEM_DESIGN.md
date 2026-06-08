@@ -40,8 +40,9 @@ The Issue Tracker is a stateless RESTful API built with Go that provides inciden
 │  │  ┌─────────────────────────────────────────────────────────────┐    │   │
 │  │  │                     Route Groups                            │    │   │
 │  │  │  /api/v1/ping          → Health Check Handler             │    │   │
-│  │  │  /api/v1/auth/*        → Auth Handlers (register, login)  │    │   │
+│  │  │  /api/v1/auth/*        → Auth Handlers (register, login, reset pwd)  │    │   │
 │  │  │  /api/v1/incidents     → Incident Handlers                │    │   │
+│  │  │  /api/v1/user          → User Handlers (get user)         │    │   │
 │  │  └─────────────────────────────────────────────────────────────┘    │   │
 │  │                              │                                        │   │
 │  │  ┌─────────────────────────────────────────────────────────────┐    │   │
@@ -50,8 +51,9 @@ The Issue Tracker is a stateless RESTful API built with Go that provides inciden
 │  │  │  │ auth.go     │  │ incidents.go│  │ users.go    │       │    │   │
 │  │  │  │ - register  │  │ - report    │  │ - update    │       │    │   │
 │  │  │  │ - login     │  │ - get       │  │ - disable   │       │    │   │
-│  │  │  └─────────────┘  │ - list      │  │ - enable    │       │    │   │
-│  │  │                   └─────────────┘  └─────────────┘       │    │   │
+│  │  │  │ - resetpwd  │  │ - list      │  │ - enable    │       │    │   │
+│  │  │  └─────────────┘  └─────────────┘  │ - get user  │       │    │   │
+│  │  │                                     └─────────────┘       │    │   │
 │  │  │  ┌─────────────┐                                         │    │   │
 │  │  │  │ utils.go    │                                         │    │   │
 │  │  │  │ - hashPass  │                                         │    │   │
@@ -329,7 +331,7 @@ Client Request
 
 | Role | Permissions |
 |------|-------------|
-| **superadmin** | User management (register, update, disable/enable), incident reporting, view all incidents |
+| **superadmin** | User management (register, update, disable/enable, reset password), incident reporting, view all incidents, get user info |
 | **admin** | Incident reporting, view department incidents |
 | **supervisor** | Incident reporting, view own department incidents |
 | **reporter** | Incident reporting only |
