@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -97,4 +98,19 @@ func(a *application) enable(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, updatedUser)
+}
+
+func(a *application) getUser(c *gin.Context) {
+	context := c.Request.Context()
+	userEmail := strings.TrimSpace(c.Query("email"))
+	if userEmail == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "An email address must be passed into the query"})
+		return
+	}
+	user, err := a.models.Users.GetByEmail(context, userEmail)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to get user"})
+		return
+	}
+	c.JSON(http.StatusOK, user)
 }
