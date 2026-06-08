@@ -77,6 +77,11 @@ func(a *application) login(c *gin.Context) {
 		return
 	}
 
+	if existingUser.Disabled {
+		c.JSON(http.StatusForbidden, gin.H{"error": "This account has been disabled"})
+		return
+	}
+
 	if !CompareHash(user.Password, existingUser.Password) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid Credentials"})
 		return
