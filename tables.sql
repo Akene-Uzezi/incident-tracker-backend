@@ -24,7 +24,8 @@ CREATE TABLE incidents (
     injury_or_damage TEXT NOT NULL,          
     severity_level VARCHAR(50) NOT NULL,     
     supervisor_notified VARCHAR(255) NOT NULL,
-    recommended_preventive_action TEXT NOT NULL 
+    recommended_preventive_action TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'unresolved'
 );
 
 INSERT INTO users (name, email, password, role, department) 
