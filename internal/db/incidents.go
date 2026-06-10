@@ -14,6 +14,8 @@ type IncidentsModel struct {
 
 type SeverityLevel string
 
+type IncidentStatus string
+
 const (
 	NearMiss SeverityLevel = "near miss"
 	Minor    SeverityLevel = "minor"
@@ -21,10 +23,24 @@ const (
 	Critical SeverityLevel = "critical"
 )
 
+const (
+	Resolved IncidentStatus = "resolved"
+	InProgress IncidentStatus = "inprogress"
+	Unresolved IncidentStatus  = "unresolved"
+)
+
 func (s SeverityLevel) IsValid() bool {
 	switch s {
 	case NearMiss, Minor, Major, Critical:
 		return true
+	}
+	return false
+}
+
+func (i IncidentStatus) IsValid() bool {
+	switch i {
+		case Resolved, InProgress, Unresolved:
+			return true
 	}
 	return false
 }
@@ -46,6 +62,7 @@ type Incident struct {
 	SeverityLevel               SeverityLevel `json:"severityLevel"`
 	SupervisorNotified          string        `json:"supervisorNotified"`
 	RecommendedPreventiveAction string        `json:"recommendedPreventiveAction"`
+	IncidentStatus              IncidentStatus `json:"incidentStatus"`
 }
 
 type IncidentReport struct {
@@ -64,6 +81,7 @@ type IncidentReport struct {
 	SeverityLevel               SeverityLevel `json:"severityLevel"`
 	SupervisorNotified          string        `json:"supervisorNotified"`
 	RecommendedPreventiveAction string        `json:"recommendedPreventiveAction"`
+	IncidentStatus IncidentStatus `json:"incidentStatus"`
 }
 
 func (m *IncidentsModel) Insert(ctx context.Context, incident *Incident) (*Incident, error) {
@@ -84,10 +102,11 @@ func (m *IncidentsModel) Insert(ctx context.Context, incident *Incident) (*Incid
 			injury_or_damage, 
 			severity_level, 
 			supervisor_notified, 
-			recommended_preventive_action
+			recommended_preventive_action,
+			incident_status
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-		RETURNING reporter_name, department, position, contact_info, date_of_incident, time_of_incident, location_of_incident, type_of_incident, people_involved, description_of_incident, immediate_action_taken, injury_or_damage, severity_level, supervisor_notified, recommended_preventive_action;
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+		RETURNING reporter_name, department, position, contact_info, date_of_incident, time_of_incident, location_of_incident, type_of_incident, people_involved, description_of_incident, immediate_action_taken, injury_or_damage, severity_level, supervisor_notified, recommended_preventive_action, incident_status;
 	`
 	err := m.DB.QueryRow(ctx, query,
 		incident.ReporterName,
@@ -105,6 +124,7 @@ func (m *IncidentsModel) Insert(ctx context.Context, incident *Incident) (*Incid
 		incident.SeverityLevel,
 		incident.SupervisorNotified,
 		incident.RecommendedPreventiveAction,
+		incident.IncidentStatus,
 	).Scan(
 		&incident.ReporterName,
 		&incident.Department,
@@ -121,6 +141,7 @@ func (m *IncidentsModel) Insert(ctx context.Context, incident *Incident) (*Incid
 		&incident.SeverityLevel,
 		&incident.SupervisorNotified,
 		&incident.RecommendedPreventiveAction,
+		&incident.IncidentStatus,
 	)
 
 	if err != nil {
@@ -142,7 +163,7 @@ func (m *IncidentsModel) FetchIncidents(ctx context.Context, limit, offset int) 
 			date_of_incident, time_of_incident, location_of_incident, 
 			type_of_incident, people_involved, description_of_incident, 
 			immediate_action_taken, injury_or_damage, severity_level, 
-			supervisor_notified, recommended_preventive_action 
+			supervisor_notified, recommended_preventive_action, incident_status 
 		FROM incidents 
 		ORDER BY id DESC 
 		LIMIT $1 OFFSET $2
@@ -160,7 +181,7 @@ func (m *IncidentsModel) FetchIncidents(ctx context.Context, limit, offset int) 
 			&inc.DateOfIncident, &inc.TimeOfIncident, &inc.LocationOfIncident,
 			&inc.TypeOfIncident, &inc.PeopleInvolved, &inc.DescriptionOfIncident,
 			&inc.ImmediateActionTaken, &inc.InjuryOrDamage, &inc.SeverityLevel,
-			&inc.SupervisorNotified, &inc.RecommendedPreventiveAction,
+			&inc.SupervisorNotified, &inc.RecommendedPreventiveAction, &inc.IncidentStatus,
 		)
 		if err != nil {
 			return nil, 0, 0, fmt.Errorf("database query error: %w", err)
@@ -201,7 +222,8 @@ func (m *IncidentsModel) FetchBySupervisor(ctx context.Context, limit, offset in
 			injury_or_damage, 
 			severity_level, 
 			supervisor_notified, 
-			recommended_preventive_action 
+			recommended_preventive_action,
+			incident_status
 		FROM incidents 
 		WHERE LOWER(TRIM(department)) = LOWER(TRIM($1))
 		ORDER BY id DESC 
@@ -220,7 +242,7 @@ func (m *IncidentsModel) FetchBySupervisor(ctx context.Context, limit, offset in
 			&inc.DateOfIncident, &inc.TimeOfIncident, &inc.LocationOfIncident,
 			&inc.TypeOfIncident, &inc.PeopleInvolved, &inc.DescriptionOfIncident,
 			&inc.ImmediateActionTaken, &inc.InjuryOrDamage, &inc.SeverityLevel,
-			&inc.SupervisorNotified, &inc.RecommendedPreventiveAction,
+			&inc.SupervisorNotified, &inc.RecommendedPreventiveAction, &inc.IncidentStatus,
 		)
 		if err != nil {
 			return nil, 0, 0, fmt.Errorf("database query error: %w", err)

@@ -47,23 +47,6 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-type SeverityLevel string
-
-const (
-	NearMiss SeverityLevel = "near miss"
-	Minor    SeverityLevel = "minor"
-	Major    SeverityLevel = "major"
-	Critical SeverityLevel = "critical"
-)
-
-func (s SeverityLevel) IsValid() bool {
-	switch s {
-	case NearMiss, Minor, Major, Critical:
-		return true
-	}
-	return false
-}
-
 type PaginationMeta struct {
 	CurrentPage int `json:"current_page"`
 	PageSize    int `json:"page_size"`

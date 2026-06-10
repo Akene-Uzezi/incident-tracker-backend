@@ -16,8 +16,8 @@ func (a *application) reportIncident(c *gin.Context) {
 		return
 	}
 
-	if !input.SeverityLevel.IsValid() {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid severity level provided"})
+	if !input.SeverityLevel.IsValid() && !input.IncidentStatus.IsValid() {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid severity level or incident status provided"})
 		return
 	}
 
@@ -37,6 +37,7 @@ func (a *application) reportIncident(c *gin.Context) {
 		SeverityLevel:               db.SeverityLevel(input.SeverityLevel),
 		SupervisorNotified:          input.SupervisorNotified,
 		RecommendedPreventiveAction: input.RecommendedPreventiveAction,
+		IncidentStatus: db.IncidentStatus(input.IncidentStatus),
 	}
 
 	savedIncident, err := a.models.Incidents.Insert(context, dbIncident)
