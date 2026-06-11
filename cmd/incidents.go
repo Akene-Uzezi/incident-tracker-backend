@@ -66,7 +66,7 @@ func (a *application) getIncidents(c *gin.Context) {
 	offset := (page - 1) * limit
 	context := c.Request.Context()
 	userRole := c.GetString("userRole")
-	if userRole == "supervisor" {
+	if userRole == "supervisor" || userRole == "reporter" {
 		userDepartment := c.GetString("userDepartment")
 		incidents, totalPages, totalItems, err := a.models.Incidents.FetchBySupervisor(context, limit, offset, userDepartment)
 		if err != nil {
