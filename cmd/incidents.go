@@ -101,5 +101,6 @@ func (a *application) getIncidents(c *gin.Context) {
 }
 
 func (a *application) updateIncidentStatus(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "This route is being worked on"})
+	id := c.Param("id")
+	c.JSON(http.StatusOK, gin.H{"message": "This route is being worked on", "id": id})
 }
