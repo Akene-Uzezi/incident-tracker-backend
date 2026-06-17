@@ -4,6 +4,7 @@ import (
 	"issueTracking/internal/db"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -102,6 +103,7 @@ func (a *application) getIncidents(c *gin.Context) {
 
 func (a *application) updateIncidentStatus(c *gin.Context) {
 	context := c.Request.Context()
+	userDepartment := strings.ToLower(c.GetString("userDepartment"))
 	var status IncidentStatusUpdate
 	if err := c.ShouldBindJSON(&status); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -111,6 +113,16 @@ func (a *application) updateIncidentStatus(c *gin.Context) {
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid id parameter was passed"})
+		return
+	}
+	fetchedIncident, err := a.models.Incidents.FetchById(context, id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": error.Error(err)})
+		return
+	}
+	incidentDept := strings.ToLower(fetchedIncident.Department)
+	if userDepartment != incidentDept {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You are not allowed to update this incident"})
 		return
 	}
 	incident, err := a.models.Incidents.UpdateIncidentStatus(context, id, status.Status)
