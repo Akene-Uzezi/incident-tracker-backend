@@ -103,6 +103,11 @@ func (a *application) getIncidents(c *gin.Context) {
 
 func (a *application) updateIncidentStatus(c *gin.Context) {
 	context := c.Request.Context()
+	userRole := strings.ToLower(c.GetString("userRole"))
+	if userRole == "reporter" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You are not allowed to update an incident"})
+		return
+	}
 	userDepartment := strings.ToLower(c.GetString("userDepartment"))
 	var status IncidentStatusUpdate
 	if err := c.ShouldBindJSON(&status); err != nil {
@@ -121,7 +126,7 @@ func (a *application) updateIncidentStatus(c *gin.Context) {
 		return
 	}
 	incidentDept := strings.ToLower(fetchedIncident.Department)
-	if userDepartment != incidentDept {
+	if userRole == "supervisor" && userDepartment != incidentDept {
 		c.JSON(http.StatusForbidden, gin.H{"error": "You are not allowed to update this incident"})
 		return
 	}
