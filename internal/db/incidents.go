@@ -83,6 +83,11 @@ type IncidentUpdate struct {
 
 	//TreatementReceived
 	TreatmentReceived string `json:"treatmentReceived"`
+
+	//equipment involved
+	EquipmentInvolved string `json:"equipmentInvolved"`
+	EquipmentModel string `json:"equipmentModel,omitempty"`
+	
 }
 
 type Incident struct {
