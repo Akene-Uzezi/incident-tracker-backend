@@ -69,8 +69,8 @@ type IncidentUpdate struct {
 	IncidentWardDept string `json:"incidentWardDept"`
 	
 	// witnesses
-	Witnesses string `json:"witnesses"`
-	WitnessType string `json:"witnessType"`
+	Witnesses string `json:"witnesses,omitempty"`
+	WitnessType string `json:"witnessType,omitempty"`
 	WitnessWardDept string `json:"witnessWardDept,omitempty"`
 	WitnessJobTitle string `json:"witnessJobTitle,omitempty"`
 	WitnessPhone string `json:"witenssPhone,omitempty"`
