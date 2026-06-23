@@ -41,19 +41,19 @@ The Issue Tracker is a stateless RESTful API built with Go that provides inciden
 │  │  │                     Route Groups                            │    │   │
 │  │  │  /api/v1/ping          → Health Check Handler             │    │   │
 │  │  │  /api/v1/auth/*        → Auth Handlers (register, login, reset pwd)  │    │   │
-│  │  │  /api/v1/incidents     → Incident Handlers (public)       │    │   │
-│  │  │  /api/v1/user          → User Handlers (get user)         │    │   │
+  │  │  │  /api/v1/incidents     → Incident Handlers (public report, auth list/update)  │    │   │
+  │  │  │  /api/v1/user          → User Handlers (get user by email)  │    │   │
 │  │  └─────────────────────────────────────────────────────────────┘    │   │
 │  │                              │                                        │   │
 │  │  ┌─────────────────────────────────────────────────────────────┐    │   │
 │  │  │                     Handlers                                │    │   │
 │  │  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐       │    │   │
 │  │  │  │ auth.go     │  │ incidents.go│  │ users.go    │       │    │   │
-│  │  │  │ - register  │  │ - report    │  │ - update    │       │    │   │
-│  │  │  │ - login     │  │ - get       │  │ - disable   │       │    │   │
-│  │  │  │ - resetpwd  │  │ - list      │  │ - enable    │       │    │   │
-│  │  │  └─────────────┘  └─────────────┘  │ - get user  │       │    │   │
-│  │  │                                     └─────────────┘       │    │   │
+  │  │  │  │ - register  │  │ - report    │  │ - update    │       │    │   │
+  │  │  │  │ - login     │  │ - get       │  │ - disable   │       │    │   │
+  │  │  │  │ - resetpwd  │  │ - updateStatus│ - enable  │       │    │   │
+  │  │  │  └─────────────┘  └─────────────┘  │ - get user  │       │    │   │
+  │  │  │                                     └─────────────┘       │    │   │
 │  │  │  ┌─────────────┐                                         │    │   │
 │  │  │  │ utils.go    │                                         │    │   │
 │  │  │  │ - hashPass  │                                         │    │   │
@@ -97,9 +97,10 @@ The Issue Tracker is a stateless RESTful API built with Go that provides inciden
 │  │  │  - GetByEmail   │    │  - Insert       │                        │   │
 │  │  │  - Insert       │    │  - FetchIncidents                        │   │
 │  │  │  - Update       │    │  - FetchBySupervisor                     │   │
-│  │  │  - DisableUser  │    │                                                │   │
-│  │  │  - EnableUser   │    │                                                │   │
-│  │  └─────────────────┘    └─────────────────┘                        │   │
+  │  │  │  - DisableUser  │    │  - FetchById    │                        │   │
+  │  │  │  - EnableUser   │    │  - UpdateIncidentStatus                  │   │
+  │  │  │  - ResetPassword│    │                 │                        │   │
+  │  │  └─────────────────┘    └─────────────────┘                        │   │
 │  │                                                                     │   │
 │  │  ┌─────────────────────────────────────────────────────────────┐    │   │
 │  │  │  db.go                                                      │    │   │
@@ -125,9 +126,10 @@ The Issue Tracker is a stateless RESTful API built with Go that provides inciden
 │  └─────────────────┘    └─────────────────┘    └─────────────────┘          │
 │                                                                             │
 │  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │  Scripts                                                             │   │
-│  │  - commit.sh        → Git helper                                    │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
+  │  │  Scripts                                                             │   │
+  │  │  - commit.sh        → Git helper                                    │   │
+  │  │  - login.sh         → psql shell into DB container                  │   │
+  │  └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                             │
 │  ┌─────────────────────────────────────────────────────────────────────┐   │
 │  │  Database Initialization                                             │   │
@@ -338,10 +340,10 @@ Client Request
 
 | Role | Permissions |
 |------|-------------|
-| **superadmin** | User management (register, update, disable/enable, reset password), incident reporting, view all incidents, get user info |
-| **admin** | Report incidents, view department incidents |
-| **supervisor** | Report incidents, view own department incidents |
-| **reporter** | Report incidents via public endpoint only |
+| **superadmin** | User management (register, update, disable/enable, reset password), report incidents, view all incidents, get user info, update any incident status |
+| **admin** | Report incidents, view all incidents, update any incident status |
+| **supervisor** | Report incidents, view own department incidents (via `incident_ward_dept`), update own department incident status |
+| **reporter** | Report incidents via public endpoint only, view own department incidents |
 
 ## Deployment Architecture
 

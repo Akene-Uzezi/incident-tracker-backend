@@ -11,17 +11,16 @@ The Issue Tracker is a layered RESTful API built with Go that follows a clean se
 **Purpose**: Handles HTTP requests, validates input, and formats responses
 
 Components:
-- **HTTP Handlers**: Process HTTP requests, validates input, and formats responses:
-- **Route Definitions** (`routes.go`): Maps HTTP endpoints to handler functions
+- **Route Definitions** (`routes.go`): Maps HTTP endpoints to handler functions, configures CORS
 - **HTTP Handlers**: Process requests and return responses:
   - `auth.go`: Authentication endpoints (register, login, reset password)
   - `users.go`: User management endpoints (update, disable, enable, get user)
-  - `incidents.go`: Incident reporting endpoints (public report, authenticated list)
-  - `main.go`: Application entrypoint
-  - `server.go`: HTTP server configuration
-  - `types.go`: Request/response structs and type definitions
-  - `utils.go`: Utility functions (password hashing, etc.)
-  - `middleware.go`: Authentication middleware (JWT validation)
+  - `incidents.go`: Incident handlers (public report, authenticated list with dept scoping, status update)
+  - `main.go`: Application entrypoint and initialization
+  - `server.go`: HTTP server configuration (timeouts)
+  - `types.go`: Request/response DTOs, JWT Claims, pagination types
+  - `utils.go`: Utility functions (bcrypt password hashing)
+  - `middleware.go`: JWT authentication middleware
 
 ### 2. Application Layer
 **Location**: Implicit in handler functions
@@ -49,14 +48,15 @@ Components:
 **Purpose**: Provides foundational services and configuration
 
 Components:
-- **Environment Configuration** (`internal/env/env.go`): Handles environment variable loading
+- **Environment Configuration** (`internal/env/env.go`): Typed accessors (string, int) with fallback defaults
 - **Configuration Files**:
   - `.air.toml`: Live reload configuration for development
-  - `docker-compose.yml`: Container orchestration
-  - `tables.sql`: Database schema definition
+  - `docker-compose.yml`: Container orchestration (PostgreSQL + server)
+  - `tables.sql`: Database schema definition, seed data, and indexes
+  - `.env.example`: Environment variable template
 - **Scripts**:
   - `commit.sh`: Git operations helper
-  - `login.sh`: Database access helper
+  - `login.sh`: Database access helper (psql shell into container)
 
 ## Component Responsibilities
 
@@ -159,7 +159,9 @@ HTTP Request → Gin Router → Middleware (if applicable) → Handler → Valid
 ### Authorization Security
 - Role-based endpoint protection
 - Superadmin-only endpoints for user management
-- Authentication required for incident reporting
+- Incident reporting endpoint is public (no authentication required)
+- Incident listing requires authentication; supervisors and reporters are scoped to their department
+- Incident status update blocked for reporters; supervisors scoped to their department via `incident_ward_dept`
 - Principle of least privilege applied
 
 ### Data Security

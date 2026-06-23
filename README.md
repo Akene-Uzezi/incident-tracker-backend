@@ -1,10 +1,10 @@
 # Issue Tracker
 
-A RESTful API for tracking incidents/issues built with Go, Gin, and PostgreSQL.
+A RESTful API for tracking workplace incidents and safety reports built with Go, Gin, and PostgreSQL.
 
 ## Overview
 
-The Issue Tracker is a web application designed to help organizations track and manage workplace incidents, safety reports, and other types of issues. It provides user authentication, role-based access control, and incident reporting capabilities.
+The Issue Tracker is a web application designed to help organizations (particularly healthcare settings) track and manage workplace incidents, safety reports, and clinical events. It provides user authentication, role-based access control, department-based scoping, and comprehensive incident reporting with structured clinical data.
 
 ## Features
 
@@ -13,19 +13,30 @@ The Issue Tracker is a web application designed to help organizations track and 
   - Secure login with JWT tokens
   - User profile updates (superadmin only)
   - Account disable/enable functionality (superadmin only)
+  - Password reset (superadmin only)
+  - Disabled account enforcement at login
+
 - **Incident Management**
-  - Report new incidents with detailed information
+  - Report new incidents via public endpoint (no auth required)
+  - Comprehensive 37-field clinical incident form
   - Track incident severity levels (Near Miss, Minor, Major, Critical)
-  - Record incident details including location, time, description, and actions taken
+  - Track incident lifecycle status (Unresolved → In Progress → Resolved)
+  - Principal person involved details (patient, staff, consultant, other)
+  - Witness information (names, types, departments, contact)
+  - Equipment involvement tracking (models, serial numbers, disposition)
+  - Treatment received and prescribing doctor fields
+  - Reporter details section (name, designation, signature, date)
+  - Paginated incident listing with metadata
 
 - **Role-Based Access Control**
   - Four distinct roles: Reporter, Supervisor, Admin, Superadmin
-  - Role-based endpoint protection
+  - Role-based endpoint protection via JWT middleware
+  - Department-based data scoping for supervisors and reporters
   - Superadmin privileges for user management
 
 - **Development Experience**
   - Docker Compose setup for easy development
-  - Hot reconfiguration with Air for live reloading
+  - Hot reload with Air for live reloading
   - Comprehensive environment variable configuration
   - Helper scripts for common operations
 
@@ -33,11 +44,11 @@ The Issue Tracker is a web application designed to help organizations track and 
 
 - **Language**: Go 1.26.3
 - **Web Framework**: Gin-Gonic
-- **Database**: PostgreSQL with PGX driver
-- **Authentication**: JWT (JSON Web Tokens) with bcrypt password hashing
+- **Database**: PostgreSQL 16 with PGX driver (connection pool)
+- **Authentication**: JWT (HS256, 72-hour expiry) with bcrypt password hashing
 - **Development Tools**: Air (live reload), Docker Compose
-- **API Testing**: Built-in endpoint testing capabilities
 - **CORS**: gin-contrib/cors middleware for Cross-Origin Resource Sharing
+- **Validation**: go-playground/validator via Gin binding
 
 ## Getting Started
 
@@ -59,9 +70,8 @@ The Issue Tracker is a web application designed to help organizations track and 
 2. Configure environment variables (optional, defaults are provided):
 
    ```bash
-   # Or set environment variables directly
-   export jwtSecret=your-secret-key
-   export allowedOrigins="http://localhost:3000"
+   cp .env.example .env
+   # Edit .env with your desired values
    ```
 
 3. Start all services (PostgreSQL and server)
@@ -71,7 +81,8 @@ The Issue Tracker is a web application designed to help organizations track and 
    ```
 
 4. The server will be available at `http://localhost:3002`
-   - Database tables are automatically created on first run
+   - Database tables are automatically created on first run via `tables.sql`
+   - A default superadmin user is seeded (`admin@example.com`)
    - Server waits for PostgreSQL to be healthy before starting
 
 ### Running Locally
@@ -95,25 +106,14 @@ go run ./cmd/
 
 ### Environment Variables
 
-The following environment variables are used:
-
 | Variable         | Description                                                      | Default Value                                                         |
 | ---------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------- |
-| `PORT`           | The port on which the server runs                                | `3002`                                                                |
-| `dbConnStr`      | PostgreSQL connection string (use `postgres` hostname in Docker) | `postgres://tracker_user:tracker_password@postgres:5432/issuetracker` |
+| `PORT`           | The port on which the server runs                                | `3001`                                                                |
+| `dbConnStr`      | PostgreSQL connection string (use `postgres` hostname in Docker) | `postgres://tracker_user:tracker_password@localhost:5432/issuetracker` |
 | `jwtSecret`      | Secret key for JWT token signing                                 | `someSecret`                                                          |
 | `allowedOrigins` | Comma-separated list of allowed origins for CORS                 | `http://localhost:3000,http://192.168.9.227:3000`                     |
 
 These can be set in the `docker-compose.yml` environment section, exported in the shell, or via an `.env` file.
-
-To set up your environment:
-
-1. Copy `.env.example` to `.env`:
-   ```bash
-   cp .env.example .env
-   ```
-2. Edit `.env` with your desired values
-3. **Important**: The `.env` file is ignored by git. Commit `.env.example` but not `.env`.
 
 > **Note**: For production, change the default `jwtSecret` to a strong, unique value.
 
@@ -133,8 +133,6 @@ All API endpoints are prefixed with `/api/v1`.
 
 ### Authentication Endpoints
 
-All authentication endpoints require appropriate roles and are protected by authentication middleware where noted.
-
 #### User Registration
 
 - `POST /api/v1/auth/register` - Register a new user
@@ -151,8 +149,8 @@ All authentication endpoints require appropriate roles and are protected by auth
     ```
   - **Responses**:
     - `201 Created`: User successfully created
-    - `400 Bad Request`: Invalid input data
-    - `401 Unauthorized`: User is not a superadmin
+    - `400 Bad Request`: Invalid input data or invalid role
+    - `403 Forbidden`: User is not a superadmin
     - `409 Conflict`: User with email already exists
     - `500 Internal Server Error`: Database or hashing error
 
@@ -182,6 +180,7 @@ All authentication endpoints require appropriate roles and are protected by auth
       }
       ```
     - `401 Unauthorized`: Invalid credentials
+    - `403 Forbidden`: Account has been disabled
     - `404 Not Found`: User not found
     - `500 Internal Server Error`: Database error
 
@@ -199,6 +198,7 @@ All user management endpoints require superadmin role and authentication middlew
       "department": "string (required)"
     }
     ```
+
 - `PUT /api/v1/auth/disable` - Disable a user account
   - **Request Body**:
     ```json
@@ -206,32 +206,23 @@ All user management endpoints require superadmin role and authentication middlew
       "email": "string (required)"
     }
     ```
+
 - `PUT /api/v1/auth/enable` - Enable a disabled user account
   - **Request Body**:
-  ```json
-  {
-    "email": "string (required)"
-  }
-  ```
-
-#### Reset Password (Superadmin Only)
+    ```json
+    {
+      "email": "string (required)"
+    }
+    ```
 
 - `PUT /api/v1/auth/resetpassword` - Reset a user's password
-  - **Requires**: Superadmin role
   - **Request Body**:
-  ```json
-  {
-    "email": "string (required)",
-    "password": "string (required, min 8 characters)"
-  }
-  ```
-
-  - **Responses**:
-    - `200 OK`: Password successfully reset
-    - `400 Bad Request`: Invalid input data
-    - `401 Unauthorized`: User is not a superadmin
-    - `404 Not Found`: User not found
-    - `500 Internal Server Error`: Database or hashing error
+    ```json
+    {
+      "email": "string (required)",
+      "password": "string (required, min 8 characters)"
+    }
+    ```
 
 #### Get User
 
@@ -242,7 +233,6 @@ All user management endpoints require superadmin role and authentication middlew
   - **Responses**:
     - `200 OK`: User information
     - `400 Bad Request`: Email parameter missing
-    - `404 Not Found`: User not found
     - `500 Internal Server Error`: Database error
 
 ### Incident Management Endpoints
@@ -250,31 +240,80 @@ All user management endpoints require superadmin role and authentication middlew
 #### Report Incident
 
 - `POST /api/v1/incidents` - Submit a new incident report
-  - **Requires**: No authentication required (anyone can report)
-  - **Request Body**:
+  - **Requires**: No authentication required (public endpoint)
+  - **Request Body** (see full IncidentReport schema below):
     ```json
     {
-      "reporterName": "string (required)",
-      "department": "string (required)",
-      "position": "string (required)",
-      "contactInfo": "string (required)",
+      "principalName": "string (required)",
+      "principalGender": "string (required)",
+      "principalDob": "string (required)",
+      "principalType": "string (required, one of: patient, staff, visiting consultant, other)",
+      "patientId": "string (optional)",
+      "patientWardDept": "string (optional)",
+      "staffJobTitle": "string (optional)",
+      "staffPhone": "string (optional)",
+      "staffPlaceOfWork": "string (optional)",
+      "staffSite": "string (optional)",
+      "peopleInvolved": "string (required)",
       "dateOfIncident": "string (required)",
       "timeOfIncident": "string (required)",
       "locationOfIncident": "string (required)",
-      "typeOfIncident": "string (required)",
-      "peopleInvolved": "string (required)",
-      "descriptionOfIncident": "string (required)",
-      "immediateActionTaken": "string (required)",
-      "injuryOrDamage": "string (required)",
+      "incidentWardDept": "string (required)",
+      "witnesses": "string (optional)",
+      "witnessType": "string (optional)",
+      "witnessWardDept": "string (optional)",
+      "witnessJobTitle": "string (optional)",
+      "witnessPhone": "string (optional)",
+      "isNearMiss": "boolean (required)",
+      "causeGroup": "string (required)",
+      "causes": "string (required)",
+      "prescribingDoctor": "string (optional)",
+      "treatmentReceived": "string (required)",
+      "equipmentInvolved": "boolean (required)",
+      "equipmentModel": "string (optional)",
+      "equipmentSentForRepair": "boolean (required)",
+      "equipmentWithdrawn": "boolean (required)",
+      "equipmentRetained": "boolean (required)",
+      "equipmentNumber": "string (optional)",
+      "isMedicalDevice": "boolean (required)",
+      "reporterName": "string (required)",
+      "reporterDesignation": "string (required)",
+      "signature": "boolean (required)",
+      "reporterInfo": "string (required)",
+      "reporterDate": "string (required)",
       "severityLevel": "string (required, one of: near miss, minor, major, critical)",
-      "supervisorNotified": "string (required)",
-      "recommendedPreventiveAction": "string (required)",
       "incidentStatus": "string (optional, one of: unresolved, inprogress, resolved, defaults to unresolved)"
     }
     ```
   - **Responses**:
-    - `200 OK`: Incident successfully recorded
+    - `200 OK`: Incident successfully recorded (returns saved incident with ID)
     - `400 Bad Request`: Invalid input data or invalid severity level
+    - `500 Internal Server Error`: Database error
+
+#### Get Incidents
+
+- `GET /api/v1/incidents` - Retrieve paginated list of incidents
+  - **Requires**: Authentication (any authenticated user)
+  - **Role-specific behavior**:
+    - `superadmin` / `admin`: See all incidents
+    - `supervisor` / `reporter`: See only incidents from their department (matched via `incident_ward_dept`)
+  - **Query Parameters**:
+    - `page`: Page number (default: 1)
+    - `limit`: Number of items per page (default: 10, max: 50)
+  - **Responses**:
+    - `200 OK`: Paginated response:
+      ```json
+      {
+        "data": [ ... ],
+        "pagination": {
+          "current_page": 1,
+          "page_size": 10,
+          "total_items": 42,
+          "total_pages": 5
+        }
+      }
+      ```
+    - `401 Unauthorized`: Missing or invalid authentication token
     - `500 Internal Server Error`: Database error
 
 #### Update Incident Status
@@ -289,25 +328,16 @@ All user management endpoints require superadmin role and authentication middlew
       "status": "string (required, one of: unresolved, inprogress, resolved)"
     }
     ```
+  - **Role-specific behavior**:
+    - `reporter`: Forbidden (403)
+    - `supervisor`: Can only update incidents in their department (matched via `incident_ward_dept`)
+    - `admin` / `superadmin`: Can update any incident
   - **Responses**:
-    - `200 OK`: Status updated successfully
-    - `400 Bad Request`: Invalid status value
+    - `200 OK`: Status updated successfully (returns updated incident)
+    - `400 Bad Request`: Invalid ID or invalid status value
     - `401 Unauthorized`: Missing or invalid authentication token
     - `403 Forbidden`: Reporter role or supervisor updating incident from another department
     - `404 Not Found`: Incident not found
-    - `500 Internal Server Error`: Database error
-
-#### Get Incidents
-
-- `GET /api/v1/incidents` - Retrieve paginated list of incidents
-  - **Requires**: Authentication (any authenticated user)
-  - **Role-specific behavior**: Supervisors only see incidents from their department
-  - **Query Parameters**:
-    - `page`: Page number (default: 1)
-    - `limit`: Number of items per page (default: 10, max: 50)
-  - **Responses**:
-    - `200 OK`: Paginated list of incidents
-    - `401 Unauthorized`: Missing or invalid authentication token
     - `500 Internal Server Error`: Database error
 
 ## Role Permissions
@@ -317,7 +347,7 @@ All user management endpoints require superadmin role and authentication middlew
 | superadmin | All endpoints including user management (register, update, disable, enable, reset password, get user), report incidents, view all incidents, update incident status |
 | admin      | Report incidents, view all incidents, update incident status                                                                                                        |
 | supervisor | Report incidents, view own department incidents, update own department incidents                                                                                    |
-| reporter   | Report incidents via public endpoint only                                                                                                                           |
+| reporter   | Report incidents via public endpoint only, view own department incidents                                                                                            |
 
 ## Database Schema
 
@@ -339,79 +369,128 @@ Stores user account information:
 
 ### Incidents Table
 
-Stores incident reports:
+Stores comprehensive clinical incident reports (37 columns):
 
-| Column                        | Type         | Constraints                   | Description                                        |
-| ----------------------------- | ------------ | ----------------------------- | -------------------------------------------------- |
-| id                            | SERIAL       | PRIMARY KEY                   | Auto-incrementing unique identifier                |
-| reporter_name                 | VARCHAR(255) | NOT NULL                      | Name of person reporting the incident              |
-| department                    | VARCHAR(100) | NOT NULL                      | Department where incident occurred                 |
-| position                      | VARCHAR(100) | NOT NULL                      | Position/job title of reporter                     |
-| contact_info                  | VARCHAR(255) | NOT NULL                      | Contact information for reporter                   |
-| date_of_incident              | VARCHAR(50)  | NOT NULL                      | Date of incident (YYYY-MM-DD format)               |
-| time_of_incident              | VARCHAR(50)  | NOT NULL                      | Time of incident (HH:MM format)                    |
-| location_of_incident          | VARCHAR(255) | NOT NULL                      | Location where incident occurred                   |
-| type_of_incident              | VARCHAR(150) | NOT NULL                      | Type/category of incident                          |
-| people_involved               | TEXT         | NOT NULL                      | Description of people involved                     |
-| description_of_incident       | TEXT         | NOT NULL                      | Detailed description of the incident               |
-| immediate_action_taken        | TEXT         | NOT NULL                      | Actions taken immediately after incident           |
-| injury_or_damage              | TEXT         | NOT NULL                      | Details of any injury or property damage           |
-| severity_level                | VARCHAR(50)  | NOT NULL                      | Severity level (near miss, minor, major, critical) |
-| supervisor_notified           | VARCHAR(255) | NOT NULL                      | Whether supervisor was notified                    |
-| recommended_preventive_action | TEXT         | NOT NULL                      | Recommended actions to prevent recurrence          |
-| incident_status               | VARCHAR(50)  | NOT NULL DEFAULT 'unresolved' | Current status (unresolved, inprogress, resolved)  |
+| Column                     | Type         | Constraints                   | Description                                        |
+| -------------------------- | ------------ | ----------------------------- | -------------------------------------------------- |
+| id                         | SERIAL       | PRIMARY KEY                   | Auto-incrementing unique identifier                |
+| **Principal Person**       |              |                               |                                                    |
+| principal_name             | VARCHAR(255) | NOT NULL                      | Name of person the incident happened to           |
+| principal_gender           | VARCHAR(50)  | NOT NULL                      | Gender of principal person                         |
+| principal_dob              | VARCHAR(50)  | NOT NULL                      | Date of birth of principal person                  |
+| principal_type             | VARCHAR(100) | NOT NULL                      | Type: patient, staff, visiting consultant, other  |
+| patient_id                 | VARCHAR(100) |                               | Patient ID (if principal is a patient)             |
+| patient_ward_dept          | VARCHAR(255) |                               | Patient's ward/department                          |
+| staff_job_title            | VARCHAR(255) |                               | Staff job title (if principal is staff)            |
+| staff_phone                | VARCHAR(50)  |                               | Staff phone number                                 |
+| staff_place_of_work        | VARCHAR(255) |                               | Staff place of work                                |
+| staff_site                 | VARCHAR(255) |                               | Staff site                                         |
+| **Others Involved**        |              |                               |                                                    |
+| people_involved            | TEXT         | NOT NULL                      | Others directly involved in the incident           |
+| **When and Where**         |              |                               |                                                    |
+| date_of_incident           | VARCHAR(50)  | NOT NULL                      | Date the incident occurred                         |
+| time_of_incident           | VARCHAR(50)  | NOT NULL                      | Time the incident occurred                         |
+| location_of_incident       | VARCHAR(255) | NOT NULL                      | Location where incident occurred                   |
+| incident_ward_dept         | VARCHAR(255) | NOT NULL                      | Ward/department (used for access control scoping)  |
+| **Witnesses**              |              |                               |                                                    |
+| witnesses                  | TEXT         |                               | Witness names/details                              |
+| witness_type               | VARCHAR(100) |                               | Type of witnesses                                  |
+| witness_ward_dept          | VARCHAR(255) |                               | Witness ward/department                            |
+| witness_job_title          | VARCHAR(255) |                               | Witness job title                                  |
+| witness_phone              | VARCHAR(50)  |                               | Witness phone number                               |
+| **Factual Description**    |              |                               |                                                    |
+| is_near_miss               | BOOLEAN      | NOT NULL DEFAULT FALSE        | Whether this was a near miss                       |
+| cause_group                | VARCHAR(255) | NOT NULL                      | Cause group classification                         |
+| causes                     | TEXT         | NOT NULL                      | Detailed cause description                         |
+| prescribing_doctor         | VARCHAR(255) |                               | Prescribing doctor (for medication incidents)      |
+| **Treatment**              |              |                               |                                                    |
+| treatment_received         | VARCHAR(255) | NOT NULL                      | Treatment received                                 |
+| **Equipment**              |              |                               |                                                    |
+| equipment_involved         | VARCHAR(100) | NOT NULL                      | Equipment involved (string for Go alignment)       |
+| equipment_model            | VARCHAR(255) |                               | Equipment model                                    |
+| equipment_sent_for_repair  | BOOLEAN      | NOT NULL DEFAULT FALSE        | Whether equipment was sent for repair              |
+| equipment_withdrawn        | BOOLEAN      | NOT NULL DEFAULT FALSE        | Whether equipment was withdrawn                    |
+| equipment_retained         | BOOLEAN      | NOT NULL DEFAULT FALSE        | Whether equipment was retained                     |
+| equipment_number           | VARCHAR(100) |                               | Equipment serial number                            |
+| is_medical_device          | VARCHAR(50)  |                               | Whether it's a medical device (string for Go align)|
+| **Reporter Details**       |              |                               |                                                    |
+| reporter_name              | VARCHAR(255) | NOT NULL                      | Reporter's name                                    |
+| reporter_designation       | VARCHAR(255) | NOT NULL                      | Reporter's designation                             |
+| signature                  | BOOLEAN      | NOT NULL DEFAULT FALSE        | Whether report was signed                          |
+| reporter_info              | VARCHAR(255) | NOT NULL                      | Additional reporter information                    |
+| reporter_date              | VARCHAR(50)  | NOT NULL                      | Date of report                                     |
+| **Status**                 |              |                               |                                                    |
+| severity_level             | VARCHAR(50)  | NOT NULL                      | Severity: near miss, minor, major, critical        |
+| incident_status            | VARCHAR(50)  | NOT NULL DEFAULT 'unresolved' | Status: unresolved, inprogress, resolved           |
+
+**Index**: `idx_incidents_id_desc` on `incidents(id DESC)` for dashboard performance.
 
 ## Project Structure
 
 ```
 .
-├── .air.toml              # Air configuration for live reloading
-├── .gitignore             # Git ignore rules
-├── commit.sh              # Helper script for git operations
-├── docker-compose.yml     # PostgreSQL and server service definitions
-├── login.sh               # Script to access database shell
-├── README.md              # This file
-├── tables.sql             # Database schema definition
+├── .air.toml                          # Air configuration for live reloading
+├── .dockerignore                      # Docker ignore rules
+├── .env                               # Local env overrides (gitignored)
+├── .env.example                       # Environment variable template
+├── .gitignore                         # Git ignore rules
+├── AGENTS.md                          # Agent/development instructions
+├── ARCHITECTURE.md                    # Architecture documentation
+├── CODE_QUALITY_ASSESSMENT_AND_FIXES.md # Code quality review and improvement guide
+├── CONTRIBUTING.md                    # Contribution guidelines
+├── Dockerfile                         # Multi-stage Go build (builder + alpine runtime)
+├── LICENSE                            # MIT License
+├── README.md                          # This file
+├── SYSTEM_DESIGN.md                   # System design documentation
+├── docker-compose.yml                 # PostgreSQL + server service definitions
+├── go.mod                             # Go module definition
+├── go.sum                             # Go module checksums
+├── login.sh                           # Script to access database shell
+├── commit.sh                          # Helper script for git operations
+├── requirements.txt                   # Feature requirements
+├── tables.sql                         # Database schema, seed data, and indexes
+├── update.txt                         # Schema/struct evolution notes
 │
-├── cmd/                   # Application entrypoint and handlers
-│   ├── auth.go            # Authentication handlers (register, login, reset password)
-│   ├── incidents.go       # Incident reporting handlers
-│   ├── main.go            # Application initialization
-│   ├── middleware.go      # Authentication middleware (JWT validation)
-│   ├── routes.go          # API route definitions
-│   ├── server.go          # HTTP server configuration
-│   ├── types.go           # Request/response structs and type definitions
-│   ├── utils.go           # Utility functions (password hashing)
-│   └── users.go           # User management handlers (update, disable, enable, get user)
+├── cmd/                               # Application entrypoint and HTTP handlers
+│   ├── auth.go                        # Authentication handlers (register, login, reset password)
+│   ├── incidents.go                   # Incident handlers (report, get, update status)
+│   ├── main.go                        # Application initialization
+│   ├── middleware.go                   # JWT authentication middleware
+│   ├── routes.go                      # API route definitions + CORS configuration
+│   ├── server.go                      # HTTP server configuration (timeouts)
+│   ├── types.go                       # Request/response DTOs, JWT Claims
+│   ├── users.go                       # User management handlers (update, disable, enable, get user)
+│   └── utils.go                       # Utility functions (bcrypt password hashing)
 │
-├── internal/              # Private application libraries
-│   ├── db/                # Database models and connection handling
-│   │   ├── db.go          # Database connection pool initialization
-│   │   ├── incidents.go   # Incident database model
-│   │   └── users.go       # User database model
-│   └── env/               # Environment variable helpers
+├── internal/                          # Private application libraries
+│   ├── db/                            # Database models and connection handling
+│   │   ├── db.go                      # Connection pool initialization, Models factory
+│   │   ├── incidents.go               # Incident model + CRUD queries
+│   │   └── users.go                   # User model + CRUD queries
+│   └── env/                           # Environment variable helpers
 │       └── env.go
 │
-└── tmp/                   # Temporary directory (used by Air for builds)
+└── tmp/                               # Temporary directory (used by Air for builds)
 ```
 
 ## Data Flow
 
 1. **Client Request**: HTTP request arrives at Gin router
 2. **Routing**: Request directed to appropriate handler based on path and method
-3. **Middleware**: Authentication middleware validates JWT token (for protected routes)
-4. **Handler**: Application logic processes request, validates input
-5. **Database Layer**: Handler calls appropriate model methods to interact with PostgreSQL
+3. **Middleware**: CORS middleware processes all requests; JWT auth middleware validates tokens for protected routes
+4. **Handler**: Application logic processes request, validates input, performs role/department authorization
+5. **Database Layer**: Handler calls model methods which execute parameterized SQL queries via PGX
 6. **Response**: Handler returns JSON response with appropriate status code
 
 ## Security Features
 
 - **Password Security**: Passwords are hashed using bcrypt before storage
-- **Authentication**: JWT-based authentication with expiration (72 hours)
-- **Authorization**: Role-based access control enforced via middleware
+- **Authentication**: JWT-based authentication with 72-hour expiration
+- **Authorization**: Role-based access control enforced via middleware; department-based data scoping
 - **Input Validation**: All incoming data is validated using Gin's binding mechanism
 - **SQL Injection Prevention**: Uses parameterized queries via PGX
 - **CORS**: Configured via gin-contrib/cors middleware with allowed origins from environment
+- **Disabled Accounts**: Login is rejected for disabled user accounts
 
 ## Error Handling
 
@@ -423,10 +502,12 @@ The API follows consistent error response format:
 }
 ```
 
+For paginated endpoints, data and pagination metadata are returned at the top level.
+
 HTTP status codes are used appropriately:
 
 - 2xx: Success
-- 4xx: Client errors (validation, authentication, etc.)
+- 4xx: Client errors (validation, authentication, authorization, not found, conflict)
 - 5xx: Server errors (database issues, etc.)
 
 ## Extending the Application
@@ -435,13 +516,13 @@ HTTP status codes are used appropriately:
 
 1. Define handler function in appropriate file under `cmd/`
 2. Add route to `routes.go` within the appropriate group
-3. Apply middleware as needed (authMiddleware() for protected routes)
+3. Apply middleware as needed (`authMiddleware()` for protected routes)
 4. Update corresponding model in `internal/db/` if database changes needed
 
 ### Adding New Database Tables/Columns
 
 1. Modify `tables.sql` with schema changes
-2. Update corresponding model in `internal/db/`
+2. Update corresponding model in `internal/db/` (struct + queries)
 3. Update handler functions in `cmd/` to use new fields
 4. Rebuild and restart containers to apply changes
 
@@ -453,19 +534,7 @@ HTTP status codes are used appropriately:
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Commit your changes (`git commit -m 'Add amazing feature'`)
-5. Push to the branch (`git push origin feature/amazing-feature`)
-6. Open a Pull Request
-
-Please ensure your code follows:
-
-- Go formatting standards (`go fmt`)
-- Clear, descriptive comments
-- Consistent error handling
-- Proper input validation
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines, coding standards, and development workflow.
 
 ## License
 

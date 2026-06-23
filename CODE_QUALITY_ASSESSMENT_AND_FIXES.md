@@ -883,18 +883,18 @@ func LogAuditEvent(ctx context.Context, event AuditLog) {
 // No migrations
 // N+1 queries
 // No performance monitoring
-// No indexes defined
+// No indexes defined (only one index on incidents.id)
 ```
 
 **Fix:**
 
 ```sql
 -- tables.sql - ADD INDEXES
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_incidents_department ON incidents(department);
-CREATE INDEX idx_incidents_created_date ON incidents(date_of_incident DESC);
-CREATE INDEX idx_users_role ON users(role);
-CREATE INDEX idx_incidents_severity ON incidents(severity_level);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_incidents_ward_dept ON incidents(incident_ward_dept);
+CREATE INDEX IF NOT EXISTS idx_incidents_severity ON incidents(severity_level);
+CREATE INDEX IF NOT EXISTS idx_incidents_status ON incidents(incident_status);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 ```
 
 ```go
@@ -973,7 +973,7 @@ func main() {
 **Current Problem:**
 ```go
 // Hardcoded defaults scattered
-env.GetEnvInt("PORT", 3002)
+env.GetEnvInt("PORT", 3001)
 env.GetEnvString("jwtSecret", "someSecret")  // ❌ Unsafe default
 ```
 
@@ -1017,16 +1017,16 @@ type Config struct {
 
 func Load() (*Config, error) {
 	cfg := &Config{
-		Port:           env.GetEnvInt("PORT", 3002),
+		Port:           env.GetEnvInt("PORT", 3001),
 		Env:            env.GetEnvString("ENV", "development"),
 		LogLevel:       env.GetEnvString("LOG_LEVEL", "info"),
-		DBConnStr:      env.GetEnvString("DB_CONN_STR", ""),
+		DBConnStr:      env.GetEnvString("dbConnStr", ""),
 		DBMaxConns:     env.GetEnvInt("DB_MAX_CONNS", 10),
 		DBMinConns:     env.GetEnvInt("DB_MIN_CONNS", 2),
 		DBQueryTimeout: time.Duration(env.GetEnvInt("DB_QUERY_TIMEOUT_SECS", 30)) * time.Second,
-		JWTSecret:      env.GetEnvString("JWT_SECRET", ""),
+		JWTSecret:      env.GetEnvString("jwtSecret", ""),
 		JWTExpiry:      time.Duration(env.GetEnvInt("JWT_EXPIRY_HOURS", 72)) * time.Hour,
-		AllowedOrigins: strings.Split(env.GetEnvString("ALLOWED_ORIGINS", "http://localhost:3000"), ","),
+		AllowedOrigins: strings.Split(env.GetEnvString("allowedOrigins", "http://localhost:3000"), ","),
 		PasswordValidator: security.NewPasswordValidator(),
 		RateLimitRequests: env.GetEnvInt("RATE_LIMIT_REQUESTS", 10),
 		RateLimitWindow:   time.Duration(env.GetEnvInt("RATE_LIMIT_WINDOW_SECS", 60)) * time.Second,
@@ -1034,11 +1034,11 @@ func Load() (*Config, error) {
 
 	// Validate critical config
 	if cfg.DBConnStr == "" {
-		return nil, fmt.Errorf("DB_CONN_STR environment variable is required")
+		return nil, fmt.Errorf("dbConnStr environment variable is required")
 	}
 
 	if cfg.JWTSecret == "" {
-		return nil, fmt.Errorf("JWT_SECRET environment variable is required (min 32 chars)")
+		return nil, fmt.Errorf("jwtSecret environment variable is required (min 32 chars)")
 	}
 
 	if len(cfg.JWTSecret) < 32 {
@@ -1181,7 +1181,7 @@ user.Role = role.String()
 - [ ] Monitoring and alerting setup
 
 ### Data
-- [ ] Database indexes ✓
+- [ ] Database indexes (partial: idx_incidents_id_desc exists)
 - [ ] Query performance optimization
 - [ ] Backup strategy
 - [ ] Point-in-time recovery

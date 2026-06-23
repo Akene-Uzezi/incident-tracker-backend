@@ -20,7 +20,7 @@ There are many ways to contribute to this project:
 2. Clone your fork locally:
    ```bash
    git clone https://github.com/your-username/issueTracker.git
-   cd issueTracker
+   cd issueTracking
    ```
 
 3. Set up the development environment:
