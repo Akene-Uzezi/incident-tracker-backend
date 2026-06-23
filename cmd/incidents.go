@@ -9,6 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+
+
 func (a *application) reportIncident(c *gin.Context) {
 	context := c.Request.Context()
 	var input db.IncidentReport
@@ -28,22 +30,45 @@ func (a *application) reportIncident(c *gin.Context) {
 	}
 
 	dbIncident := &db.Incident{
-		ReporterName:                input.ReporterName,
-		Department:                  input.Department,
-		Position:                    input.Position,
-		ContactInfo:                 input.ContactInfo,
-		DateOfIncident:              input.DateOfIncident,
-		TimeOfIncident:              input.TimeOfIncident,
-		LocationOfIncident:          input.LocationOfIncident,
-		TypeOfIncident:              input.TypeOfIncident,
-		PeopleInvolved:              input.PeopleInvolved,
-		DescriptionOfIncident:       input.DescriptionOfIncident,
-		ImmediateActionTaken:        input.ImmediateActionTaken,
-		InjuryOrDamage:              input.InjuryOrDamage,
-		SeverityLevel:               db.SeverityLevel(input.SeverityLevel),
-		SupervisorNotified:          input.SupervisorNotified,
-		RecommendedPreventiveAction: input.RecommendedPreventiveAction,
-		IncidentStatus:              db.IncidentStatus(input.IncidentStatus),
+		PrincipalName:          input.PrincipalName,
+		PrincipalGender:        input.PrincipalGender,
+		PrincipalDob:           input.PrincipalDob,
+		PrincipalType:          input.PrincipalType,
+		PatientId:              input.PatientId,
+		PatientWardDept:        input.PatientWardDept,
+		StaffJobTitle:          input.StaffJobTitle,
+		StaffPhone:             input.StaffPhone,
+		StaffPlaceOfWork:       input.StaffPlaceOfWork,
+		StaffSite:              input.StaffSite,
+		PeopleInvolved:         input.PeopleInvolved,
+		DateOfIncident:         input.DateOfIncident,
+		TimeOfIncident:         input.TimeOfIncident,
+		LocationOfIncident:     input.LocationOfIncident,
+		IncidentWardDept:       input.IncidentWardDept,
+		Witnesses:              input.Witnesses,
+		WitnessType:            input.WitnessType,
+		WitnessWardDept:        input.WitnessWardDept,
+		WitnessJobTitle:        input.WitnessJobTitle,
+		WitnessPhone:           input.WitnessPhone,
+		IsNearMiss:             input.IsNearMiss,
+		CauseGroup:             input.CauseGroup,
+		Causes:                 input.Causes,
+		PrescribingDoctor:      input.PrescribingDoctor,
+		TreatmentReceived:      input.TreatmentReceived,
+		EquipmentInvolved:      input.EquipmentInvolved,
+		EquipmentModel:         input.EquipmentModel,
+		EquipmentSentForRepair: input.EquipmentSentForRepair,
+		EquipmentWithdrawn:     input.EquipmentWithdrawn,
+		EquipmentRetained:      input.EquipmentRetained,
+		EquipmentNumber:        input.EquipmentNumber,
+		IsMedicalDevice:        input.IsMedicalDevice,
+		ReporterName:           input.ReporterName,
+		ReporterDesignation:    input.ReporterDesignation,
+		Signature:              input.Signature,
+		ReporterInfo:           input.ReporterInfo,
+		ReporterDate:           input.ReporterDate,
+		SeverityLevel:          db.SeverityLevel(input.SeverityLevel),
+		IncidentStatus:         db.IncidentStatus(input.IncidentStatus),
 	}
 
 	savedIncident, err := a.models.Incidents.Insert(context, dbIncident)
@@ -67,6 +92,7 @@ func (a *application) getIncidents(c *gin.Context) {
 	offset := (page - 1) * limit
 	context := c.Request.Context()
 	userRole := c.GetString("userRole")
+
 	if userRole == "supervisor" || userRole == "reporter" {
 		userDepartment := c.GetString("userDepartment")
 		incidents, totalPages, totalItems, err := a.models.Incidents.FetchBySupervisor(context, limit, offset, userDepartment)
@@ -85,6 +111,7 @@ func (a *application) getIncidents(c *gin.Context) {
 		})
 		return
 	}
+
 	incidents, totalPages, totalItems, err := a.models.Incidents.FetchIncidents(context, limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to execute database query"})
@@ -109,7 +136,7 @@ func (a *application) updateIncidentStatus(c *gin.Context) {
 		return
 	}
 	userDepartment := strings.ToLower(c.GetString("userDepartment"))
-	var status IncidentStatusUpdate
+	var status db.IncidentStatusUpdate
 	if err := c.ShouldBindJSON(&status); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -122,17 +149,23 @@ func (a *application) updateIncidentStatus(c *gin.Context) {
 	}
 	fetchedIncident, err := a.models.Incidents.FetchById(context, id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": error.Error(err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to look up incident"})
 		return
 	}
-	incidentDept := strings.ToLower(fetchedIncident.Department)
+	if fetchedIncident == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Incident report not found"})
+		return
+	}
+	
+	// Scoped matching uses incident_ward_dept to correctly align with clinical spaces
+	incidentDept := strings.ToLower(fetchedIncident.IncidentWardDept)
 	if userRole == "supervisor" && userDepartment != incidentDept {
 		c.JSON(http.StatusForbidden, gin.H{"error": "You are not allowed to update this incident"})
 		return
 	}
 	incident, err := a.models.Incidents.UpdateIncidentStatus(context, id, status.Status)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": error.Error(err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update status"})
 		return
 	}
 
