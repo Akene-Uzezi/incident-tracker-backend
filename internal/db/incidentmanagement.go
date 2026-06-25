@@ -18,7 +18,7 @@ type IncidentManagement struct {
 	InformedPatient bool `json:"informedPatient"`
 	InformedRelative bool `json:"informedRelative"`
 	InformedSeniorManager bool `json:"informedSeniorManager"`
-	InformedPharamacist bool `json:"informedPharmacist"`
+	InformedPharmacist bool `json:"informedPharmacist"`
 	PoliceIncidentNumber string `json:"policeIncidentNumber,omitempty"`
 	InformedOther string `json:"informedOther,omitempty"`
 

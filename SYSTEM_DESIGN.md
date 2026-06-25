@@ -89,6 +89,7 @@ The Issue Tracker is a stateless RESTful API built with Go that provides inciden
 │  │  │  db.Models {                                               │    │   │
 │  │  │    Users UserModel                                          │    │   │
 │  │  │    Incidents IncidentsModel                                 │    │   │
+│  │  │    IncidentManagement IncidentManagementModel               │    │   │
 │  │  │  }                                                          │    │   │
 │  │  └─────────────────────────────────────────────────────────────┘    │   │
 │  │                              │                                        │   │
