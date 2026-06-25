@@ -25,4 +25,11 @@ type IncidentManagement struct {
 	RiskSeverity int `json:"riskSeverity" binding:"required"`
 	RiskLikelyhood int `json:"riskLikelyhood" binding:"required"`
 	RiskRating int `json:"riskRating" binding:"required"`
+
+	OhsAbscenceOver3Days bool `json:"ohsAbscenceOver3Days"`
+	OhsActOfViolenceOrDanger bool `json:"ohsActOfViolenceOrDanger"`
+	OhsHospitalisationOver24Hours bool `json:"ohsHospitalisationOver24Hours"`
+	OhsStaffName string `json:"ohsStaffName"`
+	OhsStaffDob string `json:"ohsStaffDob"`
+	OhsStaffAddress string `json:"ohsStaffAddress"`
 }
