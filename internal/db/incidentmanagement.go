@@ -22,4 +22,7 @@ type IncidentManagement struct {
 	PoliceIncidentNumber string `json:"policeIncidentNumber,omitempty"`
 	InformedOther string `json:"informedOther,omitempty"`
 
+	RiskSeverity int `json:"riskSeverity" binding:"required"`
+	RiskLikelyhood int `json:"riskLikelyhood" binding:"required"`
+	RiskRating int `json:"riskRating" binding:"required"`
 }
