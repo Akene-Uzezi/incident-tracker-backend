@@ -32,4 +32,9 @@ type IncidentManagement struct {
 	OhsStaffName string `json:"ohsStaffName"`
 	OhsStaffDob string `json:"ohsStaffDob"`
 	OhsStaffAddress string `json:"ohsStaffAddress"`
+
+	ManagerName string `json:"managerName" binding:"required"`
+	ManagerSignature bool `json:"managerSignature" binding:"required"`
+	ManagerDesignation string `json:"managerDesignation" binding:"required"`
+	ManagerDate string `json:"managerDate" binding:"required"` // date this was filled
 }
