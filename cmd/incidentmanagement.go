@@ -3,12 +3,19 @@ package main
 import (
 	"issueTracking/internal/db"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 func (a *application) submitIncidentManagement(c *gin.Context) {
 	userRole := c.GetString("userRole")
+	idParams := c.Param("id")
+	id, err := strconv.Atoi(idParams)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid id parameter was passed"})
+		return
+	}
 	if userRole != "admin" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized. Must be an admin"})
 		return
@@ -18,8 +25,9 @@ func (a *application) submitIncidentManagement(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	incidentManagement.Id = id
 	context := c.Request.Context()
-	incidentManagement, err := a.models.IncidentManagement.SubmitReport(context, &incidentManagement)
+	incidentManagement, err = a.models.IncidentManagement.SubmitReport(context, &incidentManagement)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to perform database query"})
 		return
