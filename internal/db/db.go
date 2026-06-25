@@ -12,12 +12,14 @@ import (
 type Models struct {
 	Users     UserModel
 	Incidents IncidentsModel
+	IncidentManagement IncidentManagementModel
 }
 
 func NewModels(db *pgxpool.Pool) Models {
 	return Models{
 		Users:     UserModel{DB: db},
 		Incidents: IncidentsModel{DB: db},
+		IncidentManagement: IncidentManagementModel{DB: db},
 	}
 }
 
