@@ -99,7 +99,7 @@ create TABLE incident_management (
     manager_signature BOOLEAN NOT NULL DEFAULT FALSE, -- Aligns with your signature standard
     manager_designation VARCHAR(255) NOT NULL,
     manager_date VARCHAR(50) NOT NULL
-)
+);
 
 -- Seed Initial Super Admin
 INSERT INTO users (name, email, password, role, department) 
