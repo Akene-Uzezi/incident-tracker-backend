@@ -13,7 +13,7 @@ type IncidentManagementModel struct {
 
 type IncidentManagement struct {
 	Id int `json:"id"`
-	IncidentId int `json:"incidentId" binding:"required"`
+	IncidentId int `json:"incidentId"`
 
 	ImpactOnService string `json:"impactOnService" binding:"required"`
 	ContributoryFactors string `json:"contributoryFactors" binding:"required"`
