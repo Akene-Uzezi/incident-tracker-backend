@@ -15,10 +15,10 @@ type IncidentManagement struct {
 	Recommendations string `json:"recommendations" binding:"required"`
 	LessonsLearned string `json:"lessonsLearned" binding:"required"`
 
-	InformedPatient bool `json:"informedPatient,omitempty"`
-	InformedRelative bool `json:"informedRelative,omitempty"`
-	InformedSeniorManager bool `json:"informedSeniorManager,omitempty"`
-	InformedPharamacist bool `json:"informedPharmacist,omitempty"`
+	InformedPatient bool `json:"informedPatient"`
+	InformedRelative bool `json:"informedRelative"`
+	InformedSeniorManager bool `json:"informedSeniorManager"`
+	InformedPharamacist bool `json:"informedPharmacist"`
 	PoliceIncidentNumber string `json:"policeIncidentNumber,omitempty"`
 	InformedOther string `json:"informedOther,omitempty"`
 

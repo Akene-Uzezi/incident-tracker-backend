@@ -351,7 +351,7 @@ All user management endpoints require superadmin role and authentication middlew
 
 ## Database Schema
 
-The application uses two main tables defined in `tables.sql`:
+The application uses three main tables defined in `tables.sql`:
 
 ### Users Table
 
@@ -425,6 +425,41 @@ Stores comprehensive clinical incident reports (37 columns):
 
 **Index**: `idx_incidents_id_desc` on `incidents(id DESC)` for dashboard performance.
 
+### Incident Management Table
+
+Stores follow-up incident management data linked to incidents:
+
+| Column | Type | Constraints | Description |
+| ------ | ---- | ----------- | ----------- |
+| id | SERIAL | PRIMARY KEY | Auto-incrementing unique identifier |
+| incident_id | INT | UNIQUE NOT NULL REFERENCES incidents(id) ON DELETE CASCADE | Linked incident |
+| impact_on_service | TEXT NOT NULL | Impact on service description |
+| contributory_factors | TEXT NOT NULL | Contributory factors identified |
+| actions_taken_outcomes | TEXT NOT NULL | Actions taken and outcomes |
+| recommendations | TEXT NOT NULL | Recommendations made |
+| lessons_learned | TEXT NOT NULL | Lessons learned |
+| informed_patient | BOOLEAN | DEFAULT FALSE | Whether patient was informed |
+| informed_relative | BOOLEAN | DEFAULT FALSE | Whether relative was informed |
+| informed_senior_manager | BOOLEAN | DEFAULT FALSE | Whether senior manager was informed |
+| informed_pharmacist | BOOLEAN | DEFAULT FALSE | Whether pharmacist was informed |
+| police_incident_number | VARCHAR(100) | Police incident number if applicable |
+| informed_other | TEXT | Other parties informed |
+| risk_severity | INT NOT NULL | Risk severity rating |
+| risk_likelihood | INT NOT NULL | Risk likelihood rating |
+| risk_rating | INT NOT NULL | Overall risk rating |
+| ohs_absence_over_3_days | BOOLEAN | OHS absence over 3 days |
+| ohs_act_of_violence_or_danger | BOOLEAN | OHS act of violence or danger |
+| ohs_hospitalisation_over_24_hours | BOOLEAN | OHS hospitalisation over 24 hours |
+| ohs_staff_name | VARCHAR(255) | OHS staff name |
+| ohs_staff_dob | VARCHAR(50) | OHS staff date of birth |
+| ohs_staff_address | TEXT | OHS staff address |
+| manager_name | VARCHAR(255) NOT NULL | Manager name |
+| manager_signature | BOOLEAN NOT NULL DEFAULT FALSE | Manager signature |
+| manager_designation | VARCHAR(255) NOT NULL | Manager designation |
+| manager_date | VARCHAR(50) NOT NULL | Date of management review |
+
+**Index**: `idx_incident_management_incident_id` on `incident_management(incident_id)`.
+
 ## Project Structure
 
 ```
@@ -466,6 +501,7 @@ Stores comprehensive clinical incident reports (37 columns):
 │   ├── db/                            # Database models and connection handling
 │   │   ├── db.go                      # Connection pool initialization, Models factory
 │   │   ├── incidents.go               # Incident model + CRUD queries
+│   │   ├── incidentmanagement.go      # Incident management model (follow-up data)
 │   │   └── users.go                   # User model + CRUD queries
 │   └── env/                           # Environment variable helpers
 │       └── env.go

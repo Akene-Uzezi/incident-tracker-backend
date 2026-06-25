@@ -41,6 +41,7 @@ Components:
 - **Data Models**:
   - `users.go`: User model with CRUD operations
   - `incidents.go`: Incident model with CRUD operations
+  - `incidentmanagement.go`: Incident management model (follow-up actions, risk assessment, OHS details)
 - **Model Factory** (`db.go`): `NewModels()` function creates model instances
 
 ### 4. Infrastructure Layer
@@ -79,6 +80,11 @@ The application uses two middlewares:
 - Handle database connections and transactions
 - Convert between database rows and Go structs
 - Handle database-specific errors
+
+The models are:
+- `UserModel` — CRUD on users
+- `IncidentsModel` — CRUD on incidents
+- `IncidentManagementModel` — access to incident management follow-up records
 
 ### Environment Handling (`internal/env/`)
 - Load environment variables with fallback defaults
@@ -333,7 +339,7 @@ Monitoring/Logging Services
               │                         │           │
               ▼                         ▼           ▼
     ┌──────────────────┐        ┌──────────────────┐  ┌──────────────────┐
-    │   User Models    │◄───────┤   Incident Models│  │   Utils/Pkg    │
+    │   User Models    │◄───────┤   Incident Models│  │   Incident Mgmt  │
     └──────────────────┘        └──────────────────┘  └──────────────────┘
               │                         │           │
               └─────────────┬───────────┘└──────────┬─────────────┘
