@@ -25,8 +25,9 @@ The Issue Tracker is a web application designed to help organizations (particula
   - Witness information (names, types, departments, contact)
   - Equipment involvement tracking (models, serial numbers, disposition)
   - Treatment received and prescribing doctor fields
-  - Reporter details section (name, designation, signature, date)
-  - Paginated incident listing with metadata
+   - Reporter details section (name, designation, signature, date)
+   - Paginated incident listing with metadata
+   - Follow-up incident management reports (admin only)
 
 - **Role-Based Access Control**
   - Four distinct roles: Reporter, Supervisor, Admin, Superadmin
@@ -58,73 +59,7 @@ The Issue Tracker is a web application designed to help organizations (particula
 - Go 1.26.3 (if running locally without Docker)
 - Git (for version control)
 
-### Running with Docker Compose (Recommended)
-
-1. Clone the repository
-
-   ```bash
-   git clone <repository-url>
-   cd issueTracking
-   ```
-
-2. Configure environment variables (optional, defaults are provided):
-
-   ```bash
-   cp .env.example .env
-   # Edit .env with your desired values
-   ```
-
-3. Start all services (PostgreSQL and server)
-
-   ```bash
-   docker compose up -d
-   ```
-
-4. The server will be available at `http://localhost:3002`
-   - Database tables are automatically created on first run via `tables.sql`
-   - A default superadmin user is seeded (`admin@example.com`)
-   - Server waits for PostgreSQL to be healthy before starting
-
-### Running Locally
-
-```bash
-# Install dependencies
-go mod download
-
-# Set environment variables (optional)
-export PORT=3001
-export jwtSecret=your-secret-key
-export allowedOrigins="http://localhost:3000"
-export dbConnStr="postgres://tracker_user:tracker_password@localhost:5432/issuetracker"
-
-# Run with live reload
-air
-
-# Or run directly
-go run ./cmd/
-```
-
-### Environment Variables
-
-| Variable         | Description                                                      | Default Value                                                         |
-| ---------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------- |
-| `PORT`           | The port on which the server runs                                | `3001`                                                                |
-| `dbConnStr`      | PostgreSQL connection string (use `postgres` hostname in Docker) | `postgres://tracker_user:tracker_password@localhost:5432/issuetracker` |
-| `jwtSecret`      | Secret key for JWT token signing                                 | `someSecret`                                                          |
-| `allowedOrigins` | Comma-separated list of allowed origins for CORS                 | `http://localhost:3000,http://192.168.9.227:3000`                     |
-
-These can be set in the `docker-compose.yml` environment section, exported in the shell, or via an `.env` file.
-
-> **Note**: For production, change the default `jwtSecret` to a strong, unique value.
-
-### Helper Scripts
-
-- `./login.sh` - Opens an interactive psql shell to the PostgreSQL container for direct database access
-- `./commit.sh` - Helper script that stages all changes, prompts for a commit message, commits, and pushes to remote
-
 ## API Endpoints
-
-All API endpoints are prefixed with `/api/v1`.
 
 ### Health Check
 
@@ -337,15 +272,56 @@ All user management endpoints require superadmin role and authentication middlew
     - `400 Bad Request`: Invalid ID or invalid status value
     - `401 Unauthorized`: Missing or invalid authentication token
     - `403 Forbidden`: Reporter role or supervisor updating incident from another department
-    - `404 Not Found`: Incident not found
+     - `404 Not Found`: Incident not found
+     - `500 Internal Server Error`: Database error
+
+#### Submit Incident Management Report
+
+- `POST /api/v1/incidents/:id/management` - Submit a follow-up management report for an incident
+  - **Requires**: admin role
+  - **Path Parameters**:
+    - `id`: Incident ID (required)
+  - **Request Body** (see full IncidentManagement schema below):
+    ```json
+    {
+      "impactOnService": "string (required)",
+      "contributoryFactors": "string (required)",
+      "actionsTakenOutcomes": "string (required)",
+      "recommendations": "string (required)",
+      "lessonsLearned": "string (required)",
+      "informedPatient": "boolean (optional, default false)",
+      "informedRelative": "boolean (optional, default false)",
+      "informedSeniorManager": "boolean (optional, default false)",
+      "informedPharmacist": "boolean (optional, default false)",
+      "policeIncidentNumber": "string (optional)",
+      "informedOther": "string (optional)",
+      "riskSeverity": "integer (required)",
+      "riskLikelihood": "integer (required)",
+      "riskRating": "integer (required)",
+      "ohsAbsenceOver3Days": "boolean (optional, default false)",
+      "ohsActOfViolenceOrDanger": "boolean (optional, default false)",
+      "ohsHospitalizationOver24Hours": "boolean (optional, default false)",
+      "ohsStaffName": "string (optional)",
+      "ohsStaffDob": "string (optional)",
+      "ohsStaffAddress": "string (optional)",
+      "managerName": "string (required)",
+      "managerSignature": "boolean (required)",
+      "managerDesignation": "string (required)",
+      "managerDate": "string (required)"
+    }
+    ```
+  - **Responses**:
+    - `200 OK`: Report submitted successfully (returns saved record with ID)
+    - `400 Bad Request`: Invalid input data
+    - `403 Forbidden`: User is not an admin
     - `500 Internal Server Error`: Database error
 
 ## Role Permissions
 
 | Role       | Permissions                                                                                                                                                         |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| superadmin | All endpoints including user management (register, update, disable, enable, reset password, get user), report incidents, view all incidents, update incident status |
-| admin      | Report incidents, view all incidents, update incident status                                                                                                        |
+| superadmin | All endpoints including user management (register, update, disable, enable, reset password, get user), report incidents, view all incidents, update incident status, submit incident management reports |
+| admin      | Report incidents, view all incidents, update incident status, submit incident management reports                                                                    |
 | supervisor | Report incidents, view own department incidents, update own department incidents                                                                                    |
 | reporter   | Report incidents via public endpoint only, view own department incidents                                                                                            |
 
@@ -489,6 +465,7 @@ Stores follow-up incident management data linked to incidents:
 ├── cmd/                               # Application entrypoint and HTTP handlers
 │   ├── auth.go                        # Authentication handlers (register, login, reset password)
 │   ├── incidents.go                   # Incident handlers (report, get, update status)
+│   ├── incidentmanagement.go          # Incident management handler (submit follow-up report)
 │   ├── main.go                        # Application initialization
 │   ├── middleware.go                   # JWT authentication middleware
 │   ├── routes.go                      # API route definitions + CORS configuration

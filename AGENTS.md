@@ -133,14 +133,35 @@ curl -X PUT http://localhost:3002/api/v1/auth/resetpassword \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"email":"user@example.com","password":"newpassword123"}'
+
+# Submit incident management report (requires admin)
+curl -X POST http://localhost:3002/api/v1/incidents/1/management \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "impactOnService": "Service delayed by 2 hours",
+    "contributoryFactors": "Staff shortage",
+    "actionsTakenOutcomes": "Agency staff called in",
+    "recommendations": "Review staffing levels",
+    "lessonsLearned": "Escalate earlier next time",
+    "informedPatient": true,
+    "informedSeniorManager": true,
+    "riskSeverity": 3,
+    "riskLikelihood": 2,
+    "riskRating": 6,
+    "managerName": "Jane Manager",
+    "managerSignature": true,
+    "managerDesignation": "Ward Manager",
+    "managerDate": "2026-06-10"
+  }'
 ```
 
 ## Role Permissions
 
 | Role | Permissions |
 |------|-------------|
-| superadmin | All endpoints including user management (register, update, disable, enable, reset password, get user), report incidents, view all incidents, update any incident status |
-| admin | Report incidents, view all incidents, update any incident status |
+| superadmin | All endpoints including user management (register, update, disable, enable, reset password, get user), report incidents, view all incidents, update any incident status, submit incident management reports |
+| admin | Report incidents, view all incidents, update any incident status, submit incident management reports |
 | supervisor | Report incidents, view own department incidents (via `incident_ward_dept`), update own department incident status |
 | reporter | Report incidents via public endpoint only, view own department incidents |
 
