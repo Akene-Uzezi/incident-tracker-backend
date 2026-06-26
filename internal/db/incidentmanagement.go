@@ -54,7 +54,7 @@ func(m *IncidentManagementModel) SubmitReport(ctx context.Context, incident *Inc
 			ohs_absence_over_3_days, ohs_act_of_violence_or_danger, ohs_hospitalisation_over_24_hours, ohs_staff_name, ohs_staff_dob, ohs_staff_address,
 			manager_name, manager_signature, manager_designation, manager_date
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
 		RETURNING id;
 	`
 	err := m.DB.QueryRow(ctx, query, incident.IncidentId, incident.ImpactOnService, incident.ContributoryFactors, incident.ActionsTakenOutcomes, incident.Recommendations, incident.LessonsLearned,
