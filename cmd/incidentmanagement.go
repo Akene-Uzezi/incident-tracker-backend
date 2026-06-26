@@ -37,11 +37,17 @@ func (a *application) submitIncidentManagement(c *gin.Context) {
 
 func (a *application) getIncidentManagement(c *gin.Context) {
 	context := c.Request.Context()
-	idParams := c.Params("id")
+	idParams := c.Param("id")
 	id, err := strconv.Atoi(idParams)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid id parameter was passed"})
 		return
 	}
-	
+	incidentManagement, err := a.models.Incidents.FetchById(context, id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": error.Error(err)})
+		return
+	}
+
+	c.JSON(http.StatusOK, incidentManagement)
 }

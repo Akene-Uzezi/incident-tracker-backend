@@ -71,7 +71,7 @@ func(m *IncidentManagementModel) SubmitReport(ctx context.Context, incident *Inc
 func(m *IncidentManagementModel) FetchById(ctx context.Context, id int) (*IncidentManagement, error) {
 	var incidentmanagement IncidentManagement
 	query := `
-		SELECT * FROM incident_management WHERE id = $1;
+		SELECT * FROM incident_management WHERE incident_id = $1;
 	`
 	err := m.DB.QueryRow(ctx, query, id).Scan(
 		&incidentmanagement.Id,
