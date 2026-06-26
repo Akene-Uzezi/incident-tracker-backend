@@ -25,7 +25,7 @@ func (a *application) submitIncidentManagement(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	incidentManagement.Id = id
+	incidentManagement.IncidentId = id
 	context := c.Request.Context()
 	incidentManagement, err = a.models.IncidentManagement.SubmitReport(context, &incidentManagement)
 	if err != nil {
