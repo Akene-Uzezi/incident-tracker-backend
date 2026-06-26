@@ -71,7 +71,14 @@ func(m *IncidentManagementModel) SubmitReport(ctx context.Context, incident *Inc
 func(m *IncidentManagementModel) FetchById(ctx context.Context, id int) (*IncidentManagement, error) {
 	var incidentmanagement IncidentManagement
 	query := `
-		SELECT * FROM incident_management WHERE incident_id = $1;
+		SELECT 
+			id, incident_id, impact_on_service, contributory_factors, actions_taken_outcomes, recommendations, lessons_learned,
+			informed_patient, informed_relative, informed_senior_manager, informed_pharmacist, police_incident_number, informed_other,
+			risk_severity, risk_likelihood, risk_rating,
+			ohs_absence_over_3_days, ohs_act_of_violence_or_danger, ohs_hospitalization_over_24_hours, ohs_staff_name, ohs_staff_dob, ohs_staff_address,
+			manager_name, manager_signature, manager_designation, manager_date
+		FROM incident_management 
+		WHERE incident_id = $1;
 	`
 	err := m.DB.QueryRow(ctx, query, id).Scan(
 		&incidentmanagement.Id,
