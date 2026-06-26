@@ -48,7 +48,7 @@ func (a *application) getIncidentManagement(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid id parameter was passed"})
 		return
 	}
-	incidentManagement, err := a.models.Incidents.FetchById(context, id)
+	incidentManagement, err := a.models.IncidentManagement.FetchById(context, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": error.Error(err)})
 		return
