@@ -34,3 +34,14 @@ func (a *application) submitIncidentManagement(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, incidentManagement)
 }
+
+func (a *application) getIncidentManagement(c *gin.Context) {
+	context := c.Request.Context()
+	idParams := c.Params("id")
+	id, err := strconv.Atoi(idParams)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid id parameter was passed"})
+		return
+	}
+	
+}

@@ -67,3 +67,43 @@ func(m *IncidentManagementModel) SubmitReport(ctx context.Context, incident *Inc
 	}
 	return *incident, nil
 }
+
+func(m *IncidentManagementModel) FetchById(ctx context.Context, id int) (*IncidentManagement, error) {
+	var incidentmanagement IncidentManagement
+	query := `
+		SELECT * FROM incident_management WHERE id = $1;
+	`
+	err := m.DB.QueryRow(ctx, query, id).Scan(
+		&incidentmanagement.Id,
+		&incidentmanagement.IncidentId,
+		&incidentmanagement.ImpactOnService,
+		&incidentmanagement.ContributoryFactors,
+		&incidentmanagement.ActionsTakenOutcomes,
+		&incidentmanagement.Recommendations,
+		&incidentmanagement.LessonsLearned,
+		&incidentmanagement.InformedPatient,
+		&incidentmanagement.InformedRelative,
+		&incidentmanagement.InformedSeniorManager,
+		&incidentmanagement.InformedPharmacist,
+		&incidentmanagement.PoliceIncidentNumber,
+		&incidentmanagement.InformedOther,
+		&incidentmanagement.RiskSeverity,
+		&incidentmanagement.RiskLikelihood,
+		&incidentmanagement.RiskRating,
+		&incidentmanagement.OhsAbsenceOver3Days,
+		&incidentmanagement.OhsActOfViolenceOrDanger,
+		&incidentmanagement.OhsHospitalizationOver24Hours,
+		&incidentmanagement.OhsStaffName,
+		&incidentmanagement.OhsStaffDob,
+		&incidentmanagement.OhsStaffAddress,
+		&incidentmanagement.ManagerName,
+		&incidentmanagement.ManagerSignature,
+		&incidentmanagement.ManagerDesignation,
+		&incidentmanagement.ManagerDate,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("database query error: %w", err)
+	}
+
+	return &incidentmanagement, nil
+}
