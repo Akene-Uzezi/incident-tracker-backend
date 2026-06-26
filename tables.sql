@@ -90,7 +90,7 @@ create TABLE incident_management (
 
     ohs_absence_over_3_days BOOLEAN,
     ohs_act_of_violence_or_danger BOOLEAN,
-    ohs_hospitalisation_over_24_hours BOOLEAN,
+    ohs_hospitalization_over_24_hours BOOLEAN,
     ohs_staff_name VARCHAR(255),
     ohs_staff_dob VARCHAR(50),
     ohs_staff_address TEXT,
