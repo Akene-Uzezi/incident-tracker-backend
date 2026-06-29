@@ -101,6 +101,16 @@ create TABLE incident_management (
     manager_date VARCHAR(50) NOT NULL
 );
 
+create TABLE incident_logs (
+    id SERIAL PRIMARY KEY,
+    incident_id INT REFERENCES incidents(id) ON DELETE CASCADE,
+    changed_by INT REFERENCES users(id) ON DELETE CASCADE,
+    action VARCHAR(50),
+    old_value JSONB,
+    new_value JSONB,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
 -- Seed Initial Super Admin
 INSERT INTO users (name, email, password, role, department) 
 VALUES ('super admin', 'admin@example.com', '$2a$10$UQgnunKYIsM.hTWtjYooG.SPNKBqywEbOKddh1tU4tJuDiqfcn5Dm', 'superadmin', 'it');
