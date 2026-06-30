@@ -114,3 +114,7 @@ func(m *IncidentManagementModel) FetchById(ctx context.Context, id int) (*Incide
 
 	return &incidentmanagement, nil
 }
+
+func (m *IncidentManagementModel) UpdateIncidentManagement(ctx context.Context, incidentId, userId int, updateIncident IncidentManagement) error {
+	
+}

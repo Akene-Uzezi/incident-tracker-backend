@@ -81,7 +81,7 @@ func (a *application) updateIncidentManagement(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
-	if err := a.models.IncidentManagement.UpdateIncinentManagement(context, incidentId, uid, updateIncident); err != nil {
+	if err := a.models.IncidentManagement.UpdateIncidentManagement(context, incidentId, uid, updateIncident); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
