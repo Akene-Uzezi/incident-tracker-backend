@@ -191,7 +191,7 @@ WHERE incident_id = $25;`
 		($1, $2, $3, $4, $5)
 		RETURNING id;
 		`
-		_, logErr := m.DB.Exec(ctx, logQuery, incidentId, userId, "updated", oldvalue, updateIncident)
+		_, logErr := m.DB.Exec(bgCtx, logQuery, incidentId, userId, "updated", oldvalue, updateIncident)
 		if logErr != nil {
 			fmt.Printf("Asynchronous audit log failed for incident %d: %v\n", incidentId, logErr)
 		}
