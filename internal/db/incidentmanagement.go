@@ -12,40 +12,40 @@ type IncidentManagementModel struct {
 }
 
 type IncidentManagement struct {
-	Id int `json:"id"`
+	Id         int `json:"id"`
 	IncidentId int `json:"incidentId"`
 
-	ImpactOnService string `json:"impactOnService" binding:"required"`
-	ContributoryFactors string `json:"contributoryFactors" binding:"required"`
+	ImpactOnService      string `json:"impactOnService" binding:"required"`
+	ContributoryFactors  string `json:"contributoryFactors" binding:"required"`
 	ActionsTakenOutcomes string `json:"actionsTakenOutcomes" binding:"required"`
-	Recommendations string `json:"recommendations" binding:"required"`
-	LessonsLearned string `json:"lessonsLearned" binding:"required"`
+	Recommendations      string `json:"recommendations" binding:"required"`
+	LessonsLearned       string `json:"lessonsLearned" binding:"required"`
 
-	InformedPatient bool `json:"informedPatient"`
-	InformedRelative bool `json:"informedRelative"`
-	InformedSeniorManager bool `json:"informedSeniorManager"`
-	InformedPharmacist bool `json:"informedPharmacist"`
-	PoliceIncidentNumber string `json:"policeIncidentNumber,omitempty"`
-	InformedOther string `json:"informedOther,omitempty"`
+	InformedPatient       bool   `json:"informedPatient"`
+	InformedRelative      bool   `json:"informedRelative"`
+	InformedSeniorManager bool   `json:"informedSeniorManager"`
+	InformedPharmacist    bool   `json:"informedPharmacist"`
+	PoliceIncidentNumber  string `json:"policeIncidentNumber,omitempty"`
+	InformedOther         string `json:"informedOther,omitempty"`
 
-	RiskSeverity int `json:"riskSeverity" binding:"required"`
+	RiskSeverity   int `json:"riskSeverity" binding:"required"`
 	RiskLikelihood int `json:"riskLikelihood" binding:"required"`
-	RiskRating int `json:"riskRating" binding:"required"`
+	RiskRating     int `json:"riskRating" binding:"required"`
 
-	OhsAbsenceOver3Days bool `json:"ohsAbsenceOver3Days"`
-	OhsActOfViolenceOrDanger bool `json:"ohsActOfViolenceOrDanger"`
-	OhsHospitalizationOver24Hours bool `json:"ohsHospitalizationOver24Hours"`
-	OhsStaffName string `json:"ohsStaffName"`
-	OhsStaffDob string `json:"ohsStaffDob"`
-	OhsStaffAddress string `json:"ohsStaffAddress"`
+	OhsAbsenceOver3Days           bool   `json:"ohsAbsenceOver3Days"`
+	OhsActOfViolenceOrDanger      bool   `json:"ohsActOfViolenceOrDanger"`
+	OhsHospitalizationOver24Hours bool   `json:"ohsHospitalizationOver24Hours"`
+	OhsStaffName                  string `json:"ohsStaffName"`
+	OhsStaffDob                   string `json:"ohsStaffDob"`
+	OhsStaffAddress               string `json:"ohsStaffAddress"`
 
-	ManagerName string `json:"managerName" binding:"required"`
-	ManagerSignature bool `json:"managerSignature" binding:"required"`
+	ManagerName        string `json:"managerName" binding:"required"`
+	ManagerSignature   bool   `json:"managerSignature" binding:"required"`
 	ManagerDesignation string `json:"managerDesignation" binding:"required"`
-	ManagerDate string `json:"managerDate" binding:"required"` // date this was filled
+	ManagerDate        string `json:"managerDate" binding:"required"` // date this was filled
 }
 
-func(m *IncidentManagementModel) SubmitReport(ctx context.Context, incident *IncidentManagement) (IncidentManagement, error) {
+func (m *IncidentManagementModel) SubmitReport(ctx context.Context, incident *IncidentManagement) (IncidentManagement, error) {
 	query := `
 		INSERT INTO incident_management (
 			incident_id, impact_on_service, contributory_factors, actions_taken_outcomes, recommendations, lessons_learned,
@@ -68,7 +68,7 @@ func(m *IncidentManagementModel) SubmitReport(ctx context.Context, incident *Inc
 	return *incident, nil
 }
 
-func(m *IncidentManagementModel) FetchById(ctx context.Context, id int) (*IncidentManagement, error) {
+func (m *IncidentManagementModel) FetchById(ctx context.Context, id int) (*IncidentManagement, error) {
 	var incidentmanagement IncidentManagement
 	query := `
 		SELECT 
@@ -116,5 +116,33 @@ func(m *IncidentManagementModel) FetchById(ctx context.Context, id int) (*Incide
 }
 
 func (m *IncidentManagementModel) UpdateIncidentManagement(ctx context.Context, incidentId, userId int, updateIncident IncidentManagement) error {
-	
+	query := `
+	UPDATE incident_management
+SET  
+    impact_on_service = $1, 
+    contributory_factors = $2, 
+    actions_taken_outcomes = $3, 
+    recommendations = $4, 
+    lessons_learned = $5,
+    informed_patient = $6, 
+    informed_relative = $7, 
+    informed_senior_manager = $8, 
+    informed_pharmacist = $9, 
+    police_incident_number = $10, 
+    informed_other = $11,
+    risk_severity = $12, 
+    risk_likelihood = $13, 
+    risk_rating = $14,
+    ohs_absence_over_3_days = $15, 
+    ohs_act_of_violence_or_danger = $16, 
+    ohs_hospitalization_over_24_hours = $17, 
+    ohs_staff_name = $18, 
+    ohs_staff_dob = $19, 
+    ohs_staff_address = $20,
+    manager_name = $21, 
+    manager_signature = $22, 
+    manager_designation = $23, 
+    manager_date = $24
+WHERE incident_id = $25;`
+	return nil
 }
