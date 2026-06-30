@@ -3,7 +3,7 @@
 A RESTful API for tracking workplace incidents and safety reports built with Go, Gin, and PostgreSQL.
 
 **Code Metrics:**
-- Total Go code: 1443 lines
+- Total Go code: 1451 lines
 - 16 Go source files
 - Architecture: Clean layered (presentation → application → data → infrastructure)
 
@@ -20,6 +20,12 @@ The Issue Tracker is a web application designed to help organizations (particula
   - Account disable/enable functionality (superadmin only)
   - Password reset (superadmin only)
   - Disabled account enforcement at login
+
+- **Logging & Observability**
+  - Structured logging with separate log files for errors and incident updates
+  - Background error logging to `backgroundErrors.log`
+  - Incident update logging to `updateIncidents.log`
+  - Automatic audit logging for incident updates (stored in `incident_logs` table)
 
 - **Incident Management**
   - Report new incidents via public endpoint (no auth required)
