@@ -60,7 +60,7 @@ func (a *application) getIncidentManagement(c *gin.Context) {
 func (a *application) updateIncidentManagement(c *gin.Context) {
 	userRole := c.GetString("userRole")
 	context := c.Request.Context()
-	if userRole != "supervisor" || userRole != "admin" {
+	if userRole != "supervisor" && userRole != "admin" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized. Must be a supervisor or admin"})
 		return
 	}
@@ -81,7 +81,7 @@ func (a *application) updateIncidentManagement(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
-	if err := a.models.IncidentManagement.UpdateIncidentManagement(context, incidentId, uid, updateIncident); err != nil {
+	if err := a.models.IncidentManagement.UpdateIncidentManagement(context, incidentId, uid, &updateIncident); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

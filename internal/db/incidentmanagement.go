@@ -145,7 +145,7 @@ SET
     manager_date = $24
 WHERE incident_id = $25;`
 
-	oldstatus, err := m.FetchById(ctx, incidentId)
+	oldvalue, err := m.FetchById(ctx, incidentId)
 	if err != nil {
 		return fmt.Errorf("database query err: %w", err)
 	}
@@ -183,12 +183,12 @@ WHERE incident_id = $25;`
 
 	logQuery := `
 	INSERT INTO incident_logs
-	(incident_id, changed_by, action, old_status, new_status)
+	(incident_id, changed_by, action, old_value, new_value)
 	VALUES
 	($1, $2, $3, $4, $5)
 	RETURNING id;
 	`
-	_, err = m.DB.Exec(ctx, logQuery, incidentId, userId, "updated", oldstatus, updateIncident)
+	_, err = m.DB.Exec(ctx, logQuery, incidentId, userId, "updated", oldvalue, updateIncident)
 	if err != nil {
 		return fmt.Errorf("database query error: %w", err)
 	}
