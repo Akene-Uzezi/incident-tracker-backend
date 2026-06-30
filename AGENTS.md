@@ -4,6 +4,11 @@
 
 The Issue Tracker is a RESTful API for managing workplace incidents and safety reports built with Go, Gin, and PostgreSQL.
 
+**Code Metrics:**
+- Total Go code: ~758 lines
+- 16 Go source files
+- Architecture: Clean layered (presentation → application → data → infrastructure)
+
 ## Development Commands
 
 ```bash
@@ -63,7 +68,7 @@ curl -X POST http://localhost:3002/api/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{"email":"newuser@example.com","name":"New User","password":"password123","role":"admin","department":"IT"}'
 
-# Report incident (no auth required) - uses IncidentReport schema
+# Report incident (no auth required)
 curl -X POST http://localhost:3002/api/v1/incidents \
   -H "Content-Type: application/json" \
   -d '{
@@ -104,9 +109,6 @@ curl -X POST http://localhost:3002/api/v1/incidents \
 # Get incidents (requires auth)
 curl http://localhost:3002/api/v1/incidents -H "Authorization: Bearer $TOKEN"
 
-# Get incidents with pagination
-curl "http://localhost:3002/api/v1/incidents?page=1&limit=20" -H "Authorization: Bearer $TOKEN"
-
 # Update incident status (requires auth; reporter role forbidden)
 curl -X PATCH http://localhost:3002/api/v1/incidents/1/status \
   -H "Authorization: Bearer $TOKEN" \
@@ -115,45 +117,6 @@ curl -X PATCH http://localhost:3002/api/v1/incidents/1/status \
 
 # Get user info (requires auth)
 curl "http://localhost:3002/api/v1/user?email=test@example.com" -H "Authorization: Bearer $TOKEN"
-
-# Disable user (requires superadmin)
-curl -X PUT http://localhost:3002/api/v1/auth/disable \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com"}'
-
-# Enable user (requires superadmin)
-curl -X PUT http://localhost:3002/api/v1/auth/enable \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com"}'
-
-# Reset user password (requires superadmin)
-curl -X PUT http://localhost:3002/api/v1/auth/resetpassword \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"newpassword123"}'
-
-# Submit incident management report (requires admin)
-curl -X POST http://localhost:3002/api/v1/incidents/1/management \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "impactOnService": "Service delayed by 2 hours",
-    "contributoryFactors": "Staff shortage",
-    "actionsTakenOutcomes": "Agency staff called in",
-    "recommendations": "Review staffing levels",
-    "lessonsLearned": "Escalate earlier next time",
-    "informedPatient": true,
-    "informedSeniorManager": true,
-    "riskSeverity": 3,
-    "riskLikelihood": 2,
-    "riskRating": 6,
-    "managerName": "Jane Manager",
-    "managerSignature": true,
-    "managerDesignation": "Ward Manager",
-    "managerDate": "2026-06-10"
-  }'
 ```
 
 ## Role Permissions

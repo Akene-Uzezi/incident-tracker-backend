@@ -2,6 +2,11 @@
 
 A RESTful API for tracking workplace incidents and safety reports built with Go, Gin, and PostgreSQL.
 
+**Code Metrics:**
+- Total Go code: ~758 lines
+- 16 Go source files
+- Architecture: Clean layered (presentation → application → data → infrastructure)
+
 ## Overview
 
 The Issue Tracker is a web application designed to help organizations (particularly healthcare settings) track and manage workplace incidents, safety reports, and clinical events. It provides user authentication, role-based access control, department-based scoping, and comprehensive incident reporting with structured clinical data.
