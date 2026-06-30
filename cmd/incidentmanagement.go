@@ -59,8 +59,15 @@ func (a *application) getIncidentManagement(c *gin.Context) {
 
 func (a *application) updateIncidentManagement(c *gin.Context) {
 	userRole := c.GetString("userRole")
+	context := c.Request.Context()
 	if userRole != "supervisor" || userRole != "admin" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized. Must be a supervisor or admin"})
+		return
+	}
+	idParam := c.Param("id")
+	incidentId, err := strconv.Atoi(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid id parameter was passed"})
 		return
 	}
 	var updateIncident db.IncidentManagement
@@ -72,6 +79,10 @@ func (a *application) updateIncidentManagement(c *gin.Context) {
 	}
 	if err := c.ShouldBindJSON(&updateIncident); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+	if err := a.models.IncidentManagement.UpdateIncinentManagement(context, incidentId, uid, updateIncident); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 }
