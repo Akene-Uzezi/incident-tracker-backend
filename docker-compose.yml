@@ -29,6 +29,7 @@ services:
         condition: service_healthy
     env_file:
       - .env
-
+    volumes:
+      - .:/app
 volumes:
   pgdata:
