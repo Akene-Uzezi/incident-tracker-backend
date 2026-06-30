@@ -58,6 +58,9 @@ With focused effort on these areas, this can become production-ready.
 
 ### ✅ 5. Logging (7/10)
 - Structured logging implemented in `internal/logger/logger.go`
+- Separate log files for errors and incident updates
+- Automatic audit logging for incident updates (stored in `incident_logs` table)
+- Docker build excludes `scripts/` directory for cleaner images
 - Supports both text (dev) and JSON (production) formats
 - Request context available for tracing
 

@@ -365,16 +365,11 @@ Client Request
 │  ┌─────────────────────────────────────────────────┐   │
 │  │  Docker Compose                                 │   │
 │  │  ┌─────────────────────────────────────────┐    │   │
-│  │  │  PostgreSQL:16-alpine                     │    │   │
-│  │  │  - Volume: pgdata                         │    │   │
-│  │  │  - Init: tables.sql auto-executed         │    │   │
-│  │  │  - Port: 5432                             │    │   │
-│  │  └─────────────────────┬───────────────────┘    │   │
-│  │                        │                          │
-│  │  ┌─────────────────────▼───────────────────┐   │
 │  │  │  Go Application (built from Dockerfile) │   │
 │  │  │  - Port: 3002                           │   │
 │  │  │  - Hot reload via Air                   │   │
+│  │  │  - Volume: .:/app (code mounting)       │   │
+│  │  │  - Excludes: scripts/ directory         │   │
 │  │  └─────────────────────────────────────────┘   │   │
 │  └─────────────────────────────────────────────────┘   │
 │                                                         │

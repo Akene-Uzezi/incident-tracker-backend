@@ -31,7 +31,7 @@ go vet ./...
 ## Docker Commands
 
 ```bash
-# Start all services
+# Start all services (API at localhost:3002)
 docker compose up -d
 
 # Stop services

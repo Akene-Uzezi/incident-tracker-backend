@@ -70,6 +70,28 @@ The Issue Tracker is a web application designed to help organizations (particula
 - Go 1.26.3 (if running locally without Docker)
 - Git (for version control)
 
+### Running with Docker
+
+1. Start all services:
+   ```bash
+   docker compose up -d
+   ```
+
+2. The API will be available at `http://localhost:3002`
+   - The server uses Air for hot reload with volume mounting
+   - PostgreSQL initializes automatically with `tables.sql`
+   - Scripts directory is excluded from container build
+
+3. Stop services:
+   ```bash
+   docker compose down
+   ```
+
+4. Access database shell:
+   ```bash
+   ./login.sh
+   ```
+
 ## API Endpoints
 
 ### Health Check

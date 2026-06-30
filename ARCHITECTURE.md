@@ -223,14 +223,23 @@ HTTP Request → Gin Router → Middleware (if applicable) → Handler → Valid
 
 ### Development Environment
 ```
-Developer Machine
-├── Docker Compose
-│   ├── Go Application Container (built from Dockerfile)
-│   │   - Exposed port: 3002 (maps to container port 3001)
-│   ├── Air (hot reload enabled)
-│   └── PostgreSQL:16-alpine (with initdb for schema)
-│       - Port: 5432
-└── Local filesystem (for code)
+┌─────────────────────────────────────────────────────────┐
+│                  DEVELOPMENT ENVIRONMENT                 │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  Local Machine                                         │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │  Docker Compose                                 │   │
+│  │  ┌─────────────────────────────────────────┐    │   │
+│  │  │  Go Application (built from Dockerfile) │   │
+│  │  │  - Port: 3002                           │   │
+│  │  │  - Hot reload via Air                   │   │
+│  │  │  - Volume: .:/app (code mounting)       │   │
+│  │  │  - Excludes: scripts/ directory         │   │
+│  │  └─────────────────────────────────────────┘   │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
 ```
 
 ### Production Environment
