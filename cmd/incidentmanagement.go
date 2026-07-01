@@ -77,7 +77,7 @@ func (a *application) updateIncidentManagement(c *gin.Context) {
 		return
 	}
 	if err := a.models.IncidentManagement.UpdateIncidentManagement(context, incidentId, uid, &updateIncident); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid id wass passed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid id was passed"})
 		return
 	}
 	c.JSON(http.StatusOK, updateIncident)

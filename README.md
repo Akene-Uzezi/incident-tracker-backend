@@ -54,7 +54,7 @@ The Issue Tracker is a web application designed to help organizations (particula
 
 ## Technology Stack
 
-- **Language**: Go 1.26.3
+- **Language**: Go 1.22+
 - **Web Framework**: Gin-Gonic
 - **Database**: PostgreSQL 16 with PGX driver (connection pool)
 - **Authentication**: JWT (HS256, 72-hour expiry) with bcrypt password hashing
@@ -67,7 +67,7 @@ The Issue Tracker is a web application designed to help organizations (particula
 ### Prerequisites
 
 - Docker and Docker Compose (for containerized setup)
-- Go 1.26.3 (if running locally without Docker)
+- Go 1.22+ (if running locally without Docker)
 - Git (for version control)
 
 ### Running with Docker
@@ -78,9 +78,10 @@ The Issue Tracker is a web application designed to help organizations (particula
    ```
 
 2. The API will be available at `http://localhost:3002`
-   - The server uses Air for hot reload with volume mounting
-   - PostgreSQL initializes automatically with `tables.sql`
-   - Scripts directory is excluded from container build
+    - The server runs on port 3001 internally (PORT env var)
+    - Port 3002 on host is mapped to port 3001 in container
+    - PostgreSQL initializes automatically with `tables.sql`
+    - Docker compose mounts `logs/` directory for log output
 
 3. Stop services:
    ```bash
@@ -89,7 +90,7 @@ The Issue Tracker is a web application designed to help organizations (particula
 
 4. Access database shell:
    ```bash
-   ./login.sh
+   ./scripts/login.sh
    ```
 
 ## API Endpoints
@@ -305,7 +306,7 @@ All user management endpoints require superadmin role and authentication middlew
     - `400 Bad Request`: Invalid ID or invalid status value
     - `401 Unauthorized`: Missing or invalid authentication token
     - `403 Forbidden`: Reporter role or supervisor updating incident from another department
-     - `404 Not Found`: Incident not found
+   - `404 Not Found`: Incident not found
      - `500 Internal Server Error`: Database error
 
 #### Submit Incident Management Report
@@ -347,6 +348,57 @@ All user management endpoints require superadmin role and authentication middlew
     - `200 OK`: Report submitted successfully (returns saved record with ID)
     - `400 Bad Request`: Invalid input data
     - `403 Forbidden`: User is not an admin
+    - `500 Internal Server Error`: Database error
+
+### Incident Management Endpoints
+
+#### Get Incident Management Report
+
+- `GET /api/v1/incidents/:id/management` - Get management report for an incident
+  - **Requires**: admin role
+  - **Path Parameters**:
+    - `id`: Incident ID (required)
+  - **Responses**:
+    - `200 OK`: Management report data
+    - `403 Forbidden`: User is not an admin
+    - `404 Not Found`: Report not found
+    - `500 Internal Server Error`: Database error
+
+#### Update Incident Management Report
+
+- `PUT /api/v1/incidents/:id/management` - Update an existing management report
+  - **Requires**: supervisor or admin role
+  - **Path Parameters**:
+    - `id`: Incident ID (required)
+  - **Request Body**:
+    ```json
+    {
+      "impactOnService": "string (required)",
+      "contributoryFactors": "string (required)",
+      "actionsTakenOutcomes": "string (required)",
+      "recommendations": "string (required)",
+      "lessonsLearned": "string (required)",
+      "informedPatient": "boolean (optional, default false)",
+      "informedRelative": "boolean (optional, default false)",
+      "informedSeniorManager": "boolean (optional, default false)",
+      "informedPharmacist": "boolean (optional, default false)",
+      "policeIncidentNumber": "string (optional)",
+      "informedOther": "string (optional)",
+      "riskSeverity": "integer (required)",
+      "riskLikelihood": "integer (required)",
+      "riskRating": "integer (required)",
+      "ohsAbsenceOver3Days": "boolean (optional, default false)",
+      "ohsActOfViolenceOrDanger": "boolean (optional, default false)",
+      "ohsHospitalizationOver24Hours": "boolean (optional, default false)",
+      "ohsStaffName": "string (optional)",
+      "ohsStaffDob": "string (optional)",
+      "ohsStaffAddress": "string (optional)"
+    }
+    ```
+  - **Responses**:
+    - `200 OK`: Report updated successfully
+    - `400 Bad Request`: Invalid input data
+    - `403 Forbidden`: User is not a supervisor or admin
     - `500 Internal Server Error`: Database error
 
 ## Role Permissions

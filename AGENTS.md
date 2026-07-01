@@ -48,7 +48,7 @@ docker compose logs -f
 
 ```bash
 # Access PostgreSQL shell
-./login.sh
+./scripts/login.sh
 ```
 
 ## API Testing

@@ -17,6 +17,6 @@ WORKDIR /app
 
 COPY --from=builder /app/issue-tracker .
 
-EXPOSE 3002
+EXPOSE 3001
 
 CMD [ "./issue-tracker" ]

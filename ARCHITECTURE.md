@@ -2,6 +2,8 @@
 
 **Code Metrics:** 1451 lines of Go, 16 source files
 
+Go version: 1.22+
+
 ## System Overview
 
 The Issue Tracker is a layered RESTful API built with Go that follows a clean separation of concerns. The system is designed to be maintainable, testable, and scalable while providing robust incident tracking capabilities.
