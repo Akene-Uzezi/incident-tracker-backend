@@ -9,6 +9,9 @@ var ErrorFileLogger *log.Logger
 var UpdateIncidentLogger *log.Logger
 
 func InitLogger() {
+	if err := os.MkdirAll("logs", 0755); err != nil {
+		log.Fatalf("Failed to create log directory: %v", err)
+	}
 	errFile, err := os.OpenFile("backgroundErrors.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("Failed to open error log file: %v", err)
