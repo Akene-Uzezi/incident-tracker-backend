@@ -111,6 +111,13 @@ create TABLE incident_logs (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
+CREATE TABLE comments (
+    id serial PRIMARY KEY,
+    incident_id INT REFERENCES incidents(id) ON DELETE CASCADE,
+    user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    comment TEXT
+);
+
 -- Seed Initial Super Admin
 INSERT INTO users (name, email, password, role, department) 
 VALUES ('super admin', 'admin@example.com', '$2a$10$UQgnunKYIsM.hTWtjYooG.SPNKBqywEbOKddh1tU4tJuDiqfcn5Dm', 'superadmin', 'it');
