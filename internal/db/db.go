@@ -1,3 +1,4 @@
+// Package db this is the database package
 package db
 
 import (
