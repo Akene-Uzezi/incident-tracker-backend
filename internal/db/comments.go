@@ -52,9 +52,9 @@ func (m *CommentModel) GetComments(ctx context.Context, incidentID int) ([]Comme
 	var comments []Comment
 	for rows.Next() {
 		var comment Comment
-		err := rows.Scan(&comment.Id)
+		err := rows.Scan(&comment.Id, &comment.UserId, &comment.IncidentId, &comment.Comment)
 		if err != nil {
-			return nil, fmt.Errorf("database query error: %d", err)
+			return nil, fmt.Errorf("database query error: %v", err)
 		}
 		comments = append(comments, comment)
 	}

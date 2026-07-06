@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"strconv"
 
 	"issueTracking/internal/db"
 
@@ -28,24 +29,24 @@ func (a *application) addComment(c *gin.Context) {
 }
 
 func (a *application) getComments(c *gin.Context) {
-	ctx := c.Request.Context()
 	userRole := c.GetString("userRole")
 	if userRole != "admin" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "You are not allowed to access incident comments"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "You are not allowed to view incident comments"})
 		return
 	}
 
-	var commentRequest *CommentRequest
-	if err := c.ShouldBindJSON(commentRequest); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	ctx := c.Request.Context()
+	incidentId, err := strconv.Atoi(c.DefaultQuery("incidentId", "1"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid id was passed"})
 		return
 	}
 
-	comments, err := a.models.Comments.GetComments(ctx, commentRequest.IncidentID)
+	comments, err := a.models.Comments.GetComments(ctx, incidentId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, comments)
+	c.JSON(http.StatusOK, gin.H{"comments": comments})
 }
