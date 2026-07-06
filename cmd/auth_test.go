@@ -1,0 +1,62 @@
+package main
+
+import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"issueTracking/internal/db"
+
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
+)
+
+type TestRegisterRequest struct {
+	Name       string `json:"name"`
+	Email      string `json:"email"`
+	Password   string `json:"password"`
+	Role       string `json:"role"`
+	Department string `json:"department"`
+}
+
+func mockAuthMiddleware(role string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Set("userRole", role)
+		c.Next()
+	}
+}
+
+func TestRegisterRoute(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	testPool := db.SetupTestDB(t)
+
+	app := &application{
+		origins: "*",
+		models:  db.NewModels(testPool),
+	}
+
+	r := gin.Default()
+	r.POST("/api/v1/register", mockAuthMiddleware("superadmin"), app.register)
+	payload := map[string]string{
+		"name":       "test user",
+		"email":      "testuser@example.com",
+		"password":   "supersecurepassword123",
+		"role":       "admin",
+		"department": "Engineering",
+	}
+	jsonBody, _ := json.Marshal(payload)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/api/v1/register", bytes.NewBuffer(jsonBody))
+
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusCreated, w.Code)
+
+	var createdUser map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &createdUser)
+	assert.NoError(t, err)
+	assert.Equal(t, "testuser@example.com", createdUser["email"])
+}
