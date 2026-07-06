@@ -48,10 +48,11 @@ The Issue Tracker is a web application designed to help organizations (particula
    - Superadmin privileges for user management
 
 - **Development Experience**
-  - Docker Compose setup for easy development
-  - Hot reload with Air for live reloading
-  - Comprehensive environment variable configuration
-  - Helper scripts for common operations
+   - Docker Compose setup for easy development
+   - Hot reload with Air for live reloading
+   - Comprehensive environment variable configuration
+   - Helper scripts for common operations
+   - Unit tests for handlers and routes
 
 ## Technology Stack
 

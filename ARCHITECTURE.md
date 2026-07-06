@@ -175,6 +175,7 @@ HTTP Request → Gin Router → Middleware (if applicable) → Handler → Valid
 - Incident comments
 - Health check endpoint
 - CORS configuration
+- Unit tests for routes and handlers
 - Database connection pooling
 
 ## Security Considerations

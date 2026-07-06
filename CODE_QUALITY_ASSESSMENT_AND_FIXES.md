@@ -12,7 +12,7 @@
 ## Executive Summary
 
 This is a well-intentioned mid-level (SDE II) project with solid architectural fundamentals but lacking operational maturity expected at senior level (SDEIII). The main gaps are:
-- **Testing:** Zero test coverage
+- **Testing:** Initial unit tests added, but coverage is still low
 - **Logging & Observability:** No structured logging or monitoring
 - **Error Handling:** Generic, unhelpful error messages
 - **Security:** Missing rate limiting, audit logging, account lockout
@@ -69,21 +69,24 @@ With focused effort on these areas, this can become production-ready.
 
 ## Critical Issues
 
-### 🔴 1. No Testing (2/10) - CRITICAL
+### 🔴 1. Testing (2/10) - CRITICAL
 
 **Current Problem:**
 ```
-Zero tests in repository
+Initial unit tests added for routes and handlers
+Test coverage is still low
 ```
 
 **Impact:**
-- Can't refactor safely
-- Regressions go undetected
-- Hard to verify edge cases
-- Not production-ready
+- Core routes tested, but most handlers and models lack coverage
+- Regressions can still go undetected in untested code paths
+- Edge cases not fully covered
 
 **Fix:**
-See the detailed testing section in the original document - tests need to be added for all handlers and models.
+Continue adding tests for:
+- All handlers in `cmd/`
+- All models in `internal/db/`
+- Middleware and authentication flows
 
 ### 🔴 2. Error Handling (4/10) - CRITICAL
 
@@ -431,7 +434,7 @@ func NewRole(s string) (Role, error) {
 ### Phase 1: Foundation (Weeks 1-2)
 - [x] Add structured logging (logrus) - Already implemented in `internal/logger/logger.go`
 - [ ] Implement error handling package
-- [ ] Setup basic unit tests
+- [x] Setup basic unit tests - Initial tests added for routes and auth handlers
 - [ ] Add configuration validation
 
 ### Phase 2: Security (Weeks 3-4)
@@ -479,6 +482,7 @@ func NewRole(s string) (Role, error) {
 
 ### Testing
 - [ ] Unit tests (80%+ coverage)
+- [x] Initial unit tests added for routes and handlers
 - [ ] Integration tests
 - [ ] Load testing
 - [ ] Security testing
@@ -547,7 +551,7 @@ This codebase demonstrates solid mid-level engineering with:
 - ✅ Health check endpoint
 
 To reach senior level, focus on:
-1. **Testing** - The biggest gap (zero test coverage)
+1. **Testing** - Increase coverage beyond initial route/handler tests
 2. **Error Handling** - Structured error responses needed
 3. **Security Hardening** - Rate limiting, audit logging
 4. **Performance** - Indexing, caching, monitoring

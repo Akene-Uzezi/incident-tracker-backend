@@ -126,19 +126,25 @@ When making changes that affect security:
 
 ## Testing
 
-While this project doesn't have a comprehensive test suite yet, please consider:
+While this project has initial unit tests for routes and handlers, coverage is still limited. Please consider:
 
-1. **Manual Testing**: Test your changes thoroughly with various inputs
-2. **Edge Cases**: Think about and test edge cases
-3. **Error Conditions**: Ensure error handling works correctly
-4. **Security Testing**: Verify that security controls work as expected
-5. **Performance**: Consider performance implications of your changes
+1. **Run existing tests**: Ensure your changes don't break existing tests
+2. **Add tests for new features**: Write unit tests for any new handlers or models
+3. **Manual Testing**: Test your changes thoroughly with various inputs
+4. **Edge Cases**: Think about and test edge cases
+5. **Error Conditions**: Ensure error handling works correctly
+6. **Security Testing**: Verify that security controls work as expected
+7. **Performance**: Consider performance implications of your changes
 
 ### Running Tests
 
-If tests exist:
 ```bash
+# Run all tests
 go test ./...
+
+# Run tests in a specific package
+go test ./cmd/
+go test ./internal/db/
 ```
 
 For specific packages:
