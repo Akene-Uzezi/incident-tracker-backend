@@ -62,3 +62,7 @@ type PaginatedIncidentResponse struct {
 type IncidentStatusUpdate struct {
 	Status string `json:"status" binding:"required"`
 }
+
+type CommentRequest struct {
+	IncidentID int `json:"incidentId" binding:"required"`
+}

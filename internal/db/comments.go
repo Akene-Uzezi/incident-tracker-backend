@@ -38,3 +38,26 @@ func (m *CommentModel) InsertComment(ctx context.Context, comment *Comment) erro
 
 	return nil
 }
+
+func (m *CommentModel) GetComments(ctx context.Context, incidentID int) ([]Comment, error) {
+	query := `
+		SELECT * FROM comments WHERE incident_id = $1;
+	`
+	rows, err := m.DB.Query(ctx, query, incidentID)
+	if err != nil {
+		return nil, fmt.Errorf("database query error: %d", err)
+	}
+	defer rows.Close()
+
+	var comments []Comment
+	for rows.Next() {
+		var comment Comment
+		err := rows.Scan(&comment.Id)
+		if err != nil {
+			return nil, fmt.Errorf("database query error: %d", err)
+		}
+		comments = append(comments, comment)
+	}
+
+	return comments, nil
+}
