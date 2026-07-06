@@ -1,3 +1,5 @@
+//go:test build
+
 package db
 
 import (
