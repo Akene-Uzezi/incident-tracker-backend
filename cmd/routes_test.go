@@ -11,7 +11,9 @@ import (
 
 func TestPingRoute(t *testing.T) {
 	// create app instance
-	a := &application{}
+	a := &application{
+		origins: "*",
+	}
 
 	// get router instance
 	router := a.routes()
