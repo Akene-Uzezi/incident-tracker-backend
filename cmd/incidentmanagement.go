@@ -77,3 +77,16 @@ func (a *application) updateIncidentManagement(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, updateIncident)
 }
+
+func (a *application) getIncidentLogs(c *gin.Context) {
+	userRole := c.GetString("userRole")
+	incidentId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid id parameter was passed"})
+	}
+	if userRole != "admin" {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "you are not allowed to view incident change logs"})
+	}
+
+	incidentManagementLogs, err := a.models.IncidentManagement.GetIncidentManagementLogs(ctx, incidentId)
+}

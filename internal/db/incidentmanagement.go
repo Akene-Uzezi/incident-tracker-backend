@@ -46,6 +46,16 @@ type IncidentManagement struct {
 	ManagerDate        string `json:"managerDate" binding:"required"` // date this was filled
 }
 
+type IncidentManagementLogs struct {
+	Id         int                `json:"id"`
+	IncidentId int                `json:"incidentId"`
+	ChangedBy  int                `json:"changedBy"`
+	Action     string             `json:"action"`
+	OldValue   IncidentManagement `json:"oldValue"`
+	NewValue   IncidentManagement `json:"newValue"`
+	CreatedAt  string             `json:"createdAt"`
+}
+
 func (m *IncidentManagementModel) SubmitReport(ctx context.Context, incident *IncidentManagement) (IncidentManagement, error) {
 	query := `
 		INSERT INTO incident_management (
@@ -151,7 +161,8 @@ WHERE incident_id = $25;`
 		return fmt.Errorf("database query err: %w", err)
 	}
 
-	_, err = m.DB.Exec(ctx, query,
+	_, err = m.DB.Exec(
+		ctx, query,
 		updateIncident.ImpactOnService,
 		updateIncident.ContributoryFactors,
 		updateIncident.ActionsTakenOutcomes,
@@ -203,4 +214,7 @@ WHERE incident_id = $25;`
 	}(detachedCtx)
 
 	return nil
+}
+
+func (m *IncidentManagementModel) GetIncidentManagementLogs(ctx context.Context, incidentId int) {
 }
