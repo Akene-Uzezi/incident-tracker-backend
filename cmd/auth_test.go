@@ -134,3 +134,42 @@ func TestLoginFail(t *testing.T) {
 
 	assert.Equal(t, "user not found", response["error"])
 }
+
+func TestLoginInvalidCredentials(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	testPool := db.SetupTestDB(t)
+
+	a := &application{
+		origins: "*",
+		models:  db.NewModels(testPool),
+	}
+
+	r := a.routes()
+
+	ctx := context.Background()
+	hashPassword, err := HashPassword("supersecurepassword123")
+	assert.NoError(t, err, "error hashing seed password")
+	_, err = a.models.Users.Insert(ctx, "testuser", "testuser@example.com", hashPassword, "admin", "IT")
+
+	assert.NoError(t, err, "Failed to preseed database user")
+
+	payload := map[string]string{
+		"email":    "testuser@example.com",
+		"password": "wrongpassword",
+	}
+
+	jsonBody, _ := json.Marshal(payload)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/api/v1/auth/login", bytes.NewBuffer(jsonBody))
+
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+
+	var response map[string]any
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "Invalid Credentials", response["error"])
+}

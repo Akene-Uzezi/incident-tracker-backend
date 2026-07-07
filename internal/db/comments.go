@@ -41,7 +41,7 @@ func (m *CommentModel) InsertComment(ctx context.Context, comment *Comment) erro
 
 func (m *CommentModel) GetComments(ctx context.Context, incidentID int) ([]Comment, error) {
 	query := `
-		SELECT * FROM comments WHERE incident_id = $1;
+		SELECT * FROM comments WHERE incident_id = $1 ORDER BY id DESC;
 	`
 	rows, err := m.DB.Query(ctx, query, incidentID)
 	if err != nil {
