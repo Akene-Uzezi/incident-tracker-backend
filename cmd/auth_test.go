@@ -62,7 +62,7 @@ func TestRegisterRoute(t *testing.T) {
 	assert.Equal(t, "testuser@example.com", createdUser["email"])
 }
 
-func TestLoginRoute(t *testing.T) {
+func TestLoginSuccess(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	testPool := db.SetupTestDB(t)
@@ -101,4 +101,36 @@ func TestLoginRoute(t *testing.T) {
 	assert.Equal(t, "testuser@example.com", userMap["email"])
 
 	assert.NotEmpty(t, response["token"], "response should contain a JWT token")
+}
+
+func TestLoginFail(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	testPool := db.SetupTestDB(t)
+
+	app := &application{
+		origins: "*",
+		models:  db.NewModels(testPool),
+	}
+
+	r := app.routes()
+
+	payload := map[string]string{
+		"email":    "testuser@example.com",
+		"password": "supersecurepassword123",
+	}
+
+	jsonBody, _ := json.Marshal(payload)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/api/v1/auth/login", bytes.NewBuffer(jsonBody))
+
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusNotFound, w.Code)
+
+	var response map[string]any
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "user not found", response["error"])
 }
