@@ -1,6 +1,6 @@
 # Issue Tracker - System Design
 
-**Code Metrics:** 1797 lines of Go, 21 source files
+**Code Metrics:** ~1800 lines of Go, 20 source files
 
 ## System Overview
 
@@ -352,7 +352,7 @@ Client Request
 |------|-------------|
 | **superadmin** | User management (register, update, disable/enable, reset password), report incidents, view all incidents, get user info, update any incident status, add comments |
 | **admin** | Report incidents, view all incidents, update any incident status, add comments |
-| **supervisor** | Report incidents, view own department incidents (via `incident_ward_dept`), update own department incident status |
+| **supervisor** | Report incidents, view own department incidents (via `incident_ward_dept`) |
 | **manager** | Add comments, submit incident management reports, view all incidents |
 | **reporter** | Report incidents via public endpoint only, view own department incidents |
 

@@ -5,8 +5,8 @@
 The Issue Tracker is a RESTful API for managing workplace incidents and safety reports built with Go, Gin, and PostgreSQL.
 
 **Code Metrics:**
-- Total Go code: 1797 lines
-- 21 Go source files
+- Total Go code: ~1800 lines
+- 20 Go source files
 - Architecture: Clean layered (presentation → application → data → infrastructure)
 
 ## Development Commands
@@ -89,7 +89,7 @@ curl -X POST http://localhost:3002/api/v1/incidents \
     "witnessType": "Staff",
     "witnessWardDept": "Ward A",
     "witnessJobTitle": "Doctor",
-    "witnessPhone": "555-0100",
+    "witenssPhone": "555-0100",
     "isNearMiss": false,
     "causeGroup": "Fall",
     "causes": "Wet floor",
@@ -136,7 +136,7 @@ curl "http://localhost:3002/api/v1/incidents/comments?incidentId=1" -H "Authoriz
 |------|-------------|
 | superadmin | All endpoints including user management (register, update, disable, enable, reset password, get user), report incidents, view all incidents, update any incident status, submit incident management reports, add comments, view comments |
 | admin | Report incidents, view all incidents, update any incident status, submit incident management reports, add comments, view comments |
-| supervisor | Report incidents, view own department incidents (via `incident_ward_dept`), update own department incident status |
+| supervisor | Report incidents, view own department incidents (via `incident_ward_dept`) |
 | manager | Add comments, submit incident management reports, view all incidents |
 | reporter | Report incidents via public endpoint only, view own department incidents |
 
@@ -187,7 +187,7 @@ The incident management report captures follow-up documentation after an inciden
 - Request body: `IncidentManagement` struct
 
 **GET /api/v1/incidents/:id/management** - Retrieve management report
-- Requires: admin role
+- Requires: Authentication (any authenticated user)
 - Response: `IncidentManagement` struct
 
 **PUT /api/v1/incidents/:id/management** - Update existing report

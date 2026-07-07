@@ -1,6 +1,6 @@
 # Issue Tracker Architecture
 
-**Code Metrics:** 1797 lines of Go, 21 source files
+**Code Metrics:** ~1800 lines of Go, 20 source files
 
 Go version: 1.22+
 
@@ -142,7 +142,7 @@ HTTP Request → Gin Router → Middleware (if applicable) → Handler → Valid
 - Secret key stored in environment variable
 
 ### 4. Role-Based Access Control (RBAC)
-- Four predefined roles with permissions
+- Five distinct roles with permissions
 - Role checking performed in handlers after authentication
 - Superadmin has highest privileges (user management)
 - Incident reporting endpoint is public (no authentication required)
@@ -163,8 +163,8 @@ HTTP Request → Gin Router → Middleware (if applicable) → Handler → Valid
 ## Current Implementation Status
 
 **Code Metrics:**
-- Total Go code: 1797 lines
-- 21 Go source files
+- Total Go code: ~1800 lines
+- 20 Go source files
 - Logger already implemented in `internal/logger/logger.go`
 - Test helpers implemented in `internal/db/testhelpers.go`
 

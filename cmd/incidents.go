@@ -71,7 +71,7 @@ func (a *application) reportIncident(c *gin.Context) {
 
 	savedIncident, err := a.models.Incidents.Insert(context, dbIncident)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": error.Error(err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, savedIncident)

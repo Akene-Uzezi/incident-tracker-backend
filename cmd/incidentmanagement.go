@@ -29,7 +29,7 @@ func (a *application) submitIncidentManagement(c *gin.Context) {
 	context := c.Request.Context()
 	incidentManagement, err = a.models.IncidentManagement.SubmitReport(context, &incidentManagement)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": error.Error(err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, incidentManagement)
@@ -45,7 +45,7 @@ func (a *application) getIncidentManagement(c *gin.Context) {
 	}
 	incidentManagement, err := a.models.IncidentManagement.FetchById(context, id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": error.Error(err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 

@@ -3,8 +3,8 @@
 A RESTful API for tracking workplace incidents and safety reports built with Go, Gin, and PostgreSQL.
 
 **Code Metrics:**
-- Total Go code: 1797 lines
-- 21 Go source files
+- Total Go code: ~1800 lines
+- 20 Go source files
 - Architecture: Clean layered (presentation → application → data → infrastructure)
 
 ## Overview
@@ -56,7 +56,7 @@ The Issue Tracker is a web application designed to help organizations (particula
 
 ## Technology Stack
 
-- **Language**: Go 1.22+
+- **Language**: Go 1.26.3
 - **Web Framework**: Gin-Gonic
 - **Database**: PostgreSQL 16 with PGX driver (connection pool)
 - **Authentication**: JWT (HS256, 72-hour expiry) with bcrypt password hashing
@@ -234,7 +234,7 @@ All user management endpoints require superadmin role and authentication middlew
       "witnessType": "string (optional)",
       "witnessWardDept": "string (optional)",
       "witnessJobTitle": "string (optional)",
-      "witnessPhone": "string (optional)",
+      "witenssPhone": "string (optional)", -- Preserved frontend JSON tag typo
       "isNearMiss": "boolean (required)",
       "causeGroup": "string (required)",
       "causes": "string (required)",
@@ -306,9 +306,9 @@ All user management endpoints require superadmin role and authentication middlew
     - `200 OK`: Status updated successfully (returns updated incident)
     - `400 Bad Request`: Invalid ID or invalid status value
     - `401 Unauthorized`: Missing or invalid authentication token
-    - `403 Forbidden`: Reporter role or supervisor updating incident from another department
-   - `404 Not Found`: Incident not found
-     - `500 Internal Server Error`: Database error
+    - `403 Forbidden`: Reporter, supervisor, or manager role
+    - `404 Not Found`: Incident not found
+    - `500 Internal Server Error`: Database error
 
 #### Add Comment
 
@@ -331,12 +331,12 @@ All user management endpoints require superadmin role and authentication middlew
 #### List Comments
 
 - `GET /api/v1/incidents/comments` - Retrieve comments for an incident
-   - **Requires**: admin role
+   - **Requires**: admin or manager role
    - **Query Parameters**:
      - `incidentId`: Incident ID (required)
    - **Responses**:
      - `200 OK`: List of comments
-     - `403 Forbidden`: User is not an admin
+     - `403 Forbidden`: User is not an admin or manager
 
 #### Submit Incident Management Report
 
@@ -384,12 +384,12 @@ All user management endpoints require superadmin role and authentication middlew
 #### Get Incident Management Report
 
 - `GET /api/v1/incidents/:id/management` - Get management report for an incident
-  - **Requires**: admin role
+  - **Requires**: Authentication (any authenticated user)
   - **Path Parameters**:
     - `id`: Incident ID (required)
   - **Responses**:
     - `200 OK`: Management report data
-    - `403 Forbidden`: User is not an admin
+    - `401 Unauthorized`: Missing or invalid authentication token
     - `404 Not Found`: Report not found
     - `500 Internal Server Error`: Database error
 
@@ -436,7 +436,7 @@ All user management endpoints require superadmin role and authentication middlew
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | superadmin | All endpoints including user management (register, update, disable, enable, reset password, get user), report incidents, view all incidents, update incident status, submit incident management reports, add comments |
 | admin      | Report incidents, view all incidents, update incident status, submit incident management reports, add comments                                                                    |
-| supervisor | Report incidents, view own department incidents, update own department incidents                                                                                    |
+| supervisor | Report incidents, view own department incidents |
 | manager    | Add comments, submit incident management reports, view all incidents |
 | reporter   | Report incidents via public endpoint only, view own department incidents                                                                                            |
 
