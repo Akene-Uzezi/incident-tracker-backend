@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"issueTracking/internal/db"
 	"net/http"
 	"net/http/httptest"
@@ -71,4 +72,35 @@ func TestGetIncidentLogsInvalidRole(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, "you are not allowed to view incident change logs", response["error"])
+}
+
+func TestGetIncidentLogsSuccess(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	testPool := db.SetupTestDB(t)
+
+	a := &application{
+		origins: "*",
+		models:  db.NewModels(testPool),
+	}
+
+	r := gin.Default()
+	r.GET("/api/v1/incidents/:id/managementlogs", mockAuthMiddleware("admin"), a.getIncidentLogs)
+
+	payload := map[string]string{
+		"test": "test",
+	}
+	jsonBody, _ := json.Marshal(&payload)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/incidents/1/managementlogs", bytes.NewBuffer(jsonBody))
+
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response map[string]any
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+
+	fmt.Println(response["inicidentLogs"])
 }
