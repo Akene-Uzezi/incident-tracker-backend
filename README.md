@@ -72,7 +72,35 @@ The Issue Tracker is a web application designed to help organizations (particula
 - Go 1.22+ (if running locally without Docker)
 - Git (for version control)
 
-### Running with Docker
+## Setup
+
+### Clone and Install
+
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd incident-tracker-backend
+   ```
+
+2. Install Go dependencies:
+   ```bash
+   go mod download
+   ```
+
+3. Copy the environment template and configure it:
+   ```bash
+   cp .env.example .env
+   ```
+   - Edit `.env` and update `jwtSecret` (minimum 32 characters) and `allowedOrigins` as needed.
+   - If running locally (non-Docker), ensure `dbConnStr` points to your local PostgreSQL instance.
+
+4. Set up the database schema:
+   - **With Docker**: The schema is automatically loaded from `tables.sql` when the PostgreSQL container starts.
+   - **Without Docker**: Manually run `tables.sql` against your local PostgreSQL database.
+
+---
+
+## Running with Docker
 
 1. Start all services:
    ```bash
@@ -80,20 +108,90 @@ The Issue Tracker is a web application designed to help organizations (particula
    ```
 
 2. The API will be available at `http://localhost:3002`
-    - The server runs on port 3001 internally (PORT env var)
-    - Port 3002 on host is mapped to port 3001 in container
-    - PostgreSQL initializes automatically with `tables.sql`
-    - Docker compose mounts `logs/` directory for log output
+   - The server runs on port 3001 internally (PORT env var)
+   - Port 3002 on host is mapped to port 3001 in container
+   - PostgreSQL initializes automatically with `tables.sql`
+   - Docker compose mounts `logs/` directory for log output
 
 3. Stop services:
    ```bash
    docker compose down
    ```
 
-4. Access database shell:
+4. Remove volumes (fresh database):
+   ```bash
+   docker compose down -v
+   ```
+
+5. View logs:
+   ```bash
+   docker compose logs -f
+   ```
+
+6. Access database shell:
    ```bash
    ./scripts/login.sh
    ```
+
+---
+
+## Local Development (Without Docker)
+
+1. Ensure a local PostgreSQL instance is running on port `5432` with:
+   - Database: `issuetracker`
+   - User: `tracker_user`
+   - Password: `tracker_password`
+
+2. Apply the schema:
+   ```bash
+   psql -U tracker_user -d issuetracker -f tables.sql
+   ```
+
+3. Start the application with live reload:
+   ```bash
+   air
+   ```
+
+   Or run directly:
+   ```bash
+   go run ./cmd/
+   ```
+
+4. The API will be available at `http://localhost:3001`.
+
+---
+
+## Running Tests
+
+### Prerequisites
+
+- Docker must be installed and running locally. Tests use [`testcontainers-go`](https://golang.testcontainers.org/) to spin up a temporary PostgreSQL container automatically.
+- Go 1.22+
+
+### Commands
+
+Run all tests (this will automatically start and clean up a PostgreSQL test container):
+```bash
+go test -v -tags=test ./...
+```
+
+Or use the helper script:
+```bash
+./scripts/runtests.sh
+```
+
+Run tests for a specific package:
+```bash
+go test -v -tags=test ./cmd/
+go test -v -tags=test ./internal/db/
+```
+
+### Notes
+
+- The `-tags=test` flag is required because the test database setup lives in `internal/db/testhelpers.go`, which is protected by a `//go:build test` build tag.
+- Tests truncate all tables (`users`, `incidents`, `incident_logs`, `comments`) between test cases via `TruncateTables`.
+
+---
 
 ## API Endpoints
 

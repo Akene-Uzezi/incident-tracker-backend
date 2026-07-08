@@ -28,6 +28,10 @@ There are many ways to contribute to this project:
     # Install dependencies
     go mod download
     
+    # Set up environment variables
+    cp .env.example .env
+    # Edit .env and update jwtSecret (min 32 chars) and allowedOrigins if needed
+    
     # Set up the database (tables are loaded from tables.sql)
     docker compose up -d
     
@@ -138,19 +142,24 @@ While this project has initial unit tests for routes and handlers, coverage is s
 
 ### Running Tests
 
+Tests require Docker because they use [`testcontainers-go`](https://golang.testcontainers.org/) to spin up an isolated PostgreSQL container automatically.
+
 ```bash
-# Run all tests
-go test ./...
+# Run all tests (requires Docker)
+go test -v -tags=test ./...
+
+# Or use the helper script
+./scripts/runtests.sh
 
 # Run tests in a specific package
-go test ./cmd/
-go test ./internal/db/
+go test -v -tags=test ./cmd/
+go test -v -tags=test ./internal/db/
 ```
 
-For specific packages:
-```bash
-go test ./internal/db/
-```
+### Notes
+
+- The `-tags=test` flag is required; the test database setup in `internal/db/testhelpers.go` uses a `//go:build test` build tag.
+- Tests truncate all tables between cases (`users`, `incidents`, `incident_logs`, `comments`).
 
 ## Reporting Issues
 
