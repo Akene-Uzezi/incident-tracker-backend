@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"issueTracking/internal/logger"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -53,7 +54,7 @@ type IncidentManagementLogs struct {
 	Action     string             `json:"action"`
 	OldValue   IncidentManagement `json:"oldValue"`
 	NewValue   IncidentManagement `json:"newValue"`
-	CreatedAt  string             `json:"createdAt"`
+	CreatedAt  time.Time          `json:"createdAt"`
 	UserName   string             `json:"userName"`
 }
 
