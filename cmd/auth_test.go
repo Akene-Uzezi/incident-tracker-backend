@@ -165,3 +165,28 @@ func TestLoginInvalidCredentials(t *testing.T) {
 
 	assert.Equal(t, "Invalid Credentials", response["error"])
 }
+
+func TestUpdateUnauthorized(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	a := &application{
+		origins: "*",
+		models:  db.NewModels(testPool),
+	}
+
+	r := gin.Default()
+	r.PUT("/api/v1/update", mockAuthMiddleware("notsuperadmin"), a.update)
+
+	jsonBody, _ := json.Marshal(&map[string]any{})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("PUT", "/api/v1/update", bytes.NewBuffer(jsonBody))
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusForbidden, w.Code)
+
+	var response map[string]any
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "Unauthorized. Must be a superadmin", response["error"])
+}
