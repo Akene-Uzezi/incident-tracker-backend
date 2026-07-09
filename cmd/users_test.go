@@ -36,3 +36,12 @@ func TestUpdateUnauthorized(t *testing.T) {
 
 	assert.Equal(t, "Unauthorized. Must be a superadmin", response["error"])
 }
+
+func TestUpdateSuccess(t *testing.T) {
+	a := &application{
+		origins: "*",
+		models:  db.NewModels(testPool),
+	}
+	err := insertUser(a, t)
+	assert.NoError(t, err)
+}

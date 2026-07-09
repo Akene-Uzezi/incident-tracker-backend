@@ -45,3 +45,10 @@ func insertIncident(payload *db.Incident, a *application, t *testing.T) error {
 
 	return nil
 }
+
+func insertUser(a *application, t *testing.T) error {
+	if _, err := a.models.Users.Insert(context.Background(), "testuser", "testuser@example.com", "testpassword", "admin", "it"); err != nil {
+		return fmt.Errorf("error seeding testdata into users: %v", err)
+	}
+	return nil
+}
