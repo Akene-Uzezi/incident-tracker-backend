@@ -28,7 +28,7 @@ func TestReportIncident(t *testing.T) {
 
 	payload := map[string]any{
 		"principalName":       "testName",
-		"princidpalGender":    "Male",
+		"principalGender":     "Male",
 		"principalDob":        "today",
 		"principalType":       "Patient",
 		"patientId":           "iajdaj232",
@@ -61,4 +61,39 @@ func TestReportIncident(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, "testName", response["principalName"])
+}
+
+func TestGetIncidents(t *testing.T) {
+	db.TruncateTables(t, testPool)
+
+	payload := &db.Incident{
+		PrincipalName:       "testName",
+		PrincipalGender:     "Male",
+		PrincipalDob:        "today",
+		PrincipalType:       "Patient",
+		PatientId:           "iajdaj232",
+		PatientWardDept:     "icu",
+		PeopleInvolved:      "peopleInvolved",
+		DateOfIncident:      "today",
+		TimeOfIncident:      "now",
+		LocationOfIncident:  "here",
+		IncidentWardDept:    "here?",
+		IsNearMiss:          false,
+		CauseGroup:          "causeGroup",
+		ReporterName:        "Akene Uzezi",
+		ReporterDesignation: "???",
+		Signature:           true,
+		ReporterInfo:        "some info",
+		ReporterDate:        "today",
+		SeverityLevel:       "minor",
+		IncidentStatus:      "unresolved",
+	}
+
+	a := &application{
+		origins: "*",
+		models:  db.NewModels(testPool),
+	}
+
+	err := insertIncident(payload, a, t)
+	assert.NoError(t, err)
 }

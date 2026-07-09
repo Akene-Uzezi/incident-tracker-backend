@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"issueTracking/internal/db"
 	"log"
 	"os"
@@ -34,4 +36,12 @@ func TestMain(m *testing.M) {
 	cleanup()
 
 	os.Exit(exitCode)
+}
+
+func insertIncident(payload *db.Incident, a *application, t *testing.T) error {
+	if _, err := a.models.Incidents.Insert(context.Background(), payload); err != nil {
+		return fmt.Errorf("error seeding test data into incidents")
+	}
+
+	return nil
 }
