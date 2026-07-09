@@ -181,3 +181,58 @@ func TestUpdateIncidentStatusInvalidId(t *testing.T) {
 	r.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
+
+func TestUpdateIncidentStatusSuccess(t *testing.T) {
+	db.TruncateTables(t, testPool)
+
+	gin.SetMode(gin.TestMode)
+
+	r := gin.Default()
+	a := &application{
+		origins: "*",
+		models:  db.NewModels(testPool),
+	}
+	payload := &db.Incident{
+		PrincipalName:       "testName",
+		PrincipalGender:     "Male",
+		PrincipalDob:        "today",
+		PrincipalType:       "Patient",
+		PatientId:           "iajdaj232",
+		PatientWardDept:     "icu",
+		PeopleInvolved:      "peopleInvolved",
+		DateOfIncident:      "today",
+		TimeOfIncident:      "now",
+		LocationOfIncident:  "here",
+		IncidentWardDept:    "here?",
+		IsNearMiss:          false,
+		CauseGroup:          "causeGroup",
+		ReporterName:        "Akene Uzezi",
+		ReporterDesignation: "???",
+		Signature:           true,
+		ReporterInfo:        "some info",
+		ReporterDate:        "today",
+		SeverityLevel:       "minor",
+		IncidentStatus:      "unresolved",
+	}
+
+	err := insertIncident(payload, a, t)
+	assert.NoError(t, err)
+
+	r.PATCH("/api/v1/incidents/:id/status", mockAuthMiddleware("admin"), a.updateIncidentStatus)
+
+	requestPayload := &db.IncidentStatusUpdate{
+		Status: "resolved",
+	}
+	jsonBody, _ := json.Marshal(&requestPayload)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("PATCH", "/api/v1/incidents/1/status", bytes.NewBuffer(jsonBody))
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response map[string]any
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "resolved", response["incidentStatus"])
+}
