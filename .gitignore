@@ -7,3 +7,4 @@ updateIncidents.log
 backgroundErrors.log
 
 logs/
+.kilo/
