@@ -66,6 +66,8 @@ func TestReportIncident(t *testing.T) {
 func TestGetIncidents(t *testing.T) {
 	db.TruncateTables(t, testPool)
 
+	gin.SetMode(gin.TestMode)
+
 	payload := &db.Incident{
 		PrincipalName:       "testName",
 		PrincipalGender:     "Male",
@@ -96,4 +98,7 @@ func TestGetIncidents(t *testing.T) {
 
 	err := insertIncident(payload, a, t)
 	assert.NoError(t, err)
+
+	r := gin.Default()
+	r.GET("/api/v1/incidents", mockAuthMiddleware("admin"), a.getIncidents)
 }
