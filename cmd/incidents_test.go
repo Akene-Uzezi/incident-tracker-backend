@@ -111,6 +111,49 @@ func TestGetIncidents(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
-func TestUpdateIncidentStatusForbidden() {
+func TestUpdateIncidentStatusForbidden(t *testing.T) {
 	db.TruncateTables(t, testPool)
+
+	gin.SetMode(gin.TestMode)
+
+	a := &application{
+		origins: "*",
+		models:  db.NewModels(testPool),
+	}
+
+	r := gin.Default()
+
+	payload := &db.Incident{
+		PrincipalName:       "testName",
+		PrincipalGender:     "Male",
+		PrincipalDob:        "today",
+		PrincipalType:       "Patient",
+		PatientId:           "iajdaj232",
+		PatientWardDept:     "icu",
+		PeopleInvolved:      "peopleInvolved",
+		DateOfIncident:      "today",
+		TimeOfIncident:      "now",
+		LocationOfIncident:  "here",
+		IncidentWardDept:    "here?",
+		IsNearMiss:          false,
+		CauseGroup:          "causeGroup",
+		ReporterName:        "Akene Uzezi",
+		ReporterDesignation: "???",
+		Signature:           true,
+		ReporterInfo:        "some info",
+		ReporterDate:        "today",
+		SeverityLevel:       "minor",
+		IncidentStatus:      "unresolved",
+	}
+
+	err := insertIncident(payload, a, t)
+	assert.NoError(t, err)
+
+	r.PATCH("/api/v1/incidents/:id/status", mockAuthMiddleware("manager"), a.updateIncidentStatus)
+
+	jsonBody, _ := json.Marshal(payload)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("PATCH", "/api/v1/incidents/1/status", bytes.NewBuffer(jsonBody))
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusForbidden, w.Code)
 }
