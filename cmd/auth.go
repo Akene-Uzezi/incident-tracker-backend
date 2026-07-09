@@ -10,7 +10,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// register creates a new user account. Only superadmin callers are allowed.
+func (a *application) register(c *gin.Context) {
 	userRole := c.GetString("userRole")
 	if userRole != "superadmin" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized. Must be a superadmin"})
@@ -57,7 +57,7 @@ import (
 
 }
 
-// login authenticates a user by email and password, returning a JWT token on success.
+func (a *application) login(c *gin.Context) {
 	context := c.Request.Context()
 	var user loginRequest
 	if err := c.ShouldBindJSON(&user); err != nil {
@@ -105,7 +105,7 @@ import (
 	c.JSON(http.StatusOK, gin.H{"token": tokenString, "user": existingUser})
 }
 
-// resetPassword resets the password for a given user. Requires superadmin role.
+func (a *application) resetPassword(c *gin.Context) {
 	context := c.Request.Context()
 	userRole := c.GetString("userRole")
 	if userRole != "superadmin" {

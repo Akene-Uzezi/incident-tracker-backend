@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// addComment posts a comment on an incident. Requires admin or manager role.
+func (a *application) addComment(c *gin.Context) {
 	userRole := c.GetString("userRole")
 	if userRole != "manager" && userRole != "admin" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "You are not allowed add comments to this incident"})
@@ -28,7 +28,7 @@ import (
 	c.JSON(http.StatusCreated, gin.H{"message": "comment added"})
 }
 
-// getComments returns comments for a given incident. Requires admin or manager role.
+func (a *application) getComments(c *gin.Context) {
 	userRole := c.GetString("userRole")
 	if userRole != "admin" && userRole != "manager" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "You are not allowed to view incident comments"})

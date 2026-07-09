@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// update modifies a user's profile. Requires superadmin role.
+func (a *application) update(c *gin.Context) {
 	userRole := c.GetString("userRole")
 	if userRole != "superadmin" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized. Must be a superadmin"})
@@ -40,7 +40,7 @@ import (
 	c.JSON(http.StatusOK, updatedUser)
 }
 
-// disable marks a user account as disabled. Requires superadmin role.
+func (a *application) disable(c *gin.Context) {
 	userRole := c.GetString("userRole")
 	if userRole != "superadmin" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized. Must be a superadmin"})
@@ -70,7 +70,7 @@ import (
 	c.JSON(http.StatusOK, updatedUser)
 }
 
-// enable re-enables a previously disabled user account. Requires superadmin role.
+func (a *application) enable(c *gin.Context) {
 	userRole := c.GetString("userRole")
 	if userRole != "superadmin" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized must be a super admin", "role": userRole})
@@ -100,7 +100,7 @@ import (
 	c.JSON(http.StatusOK, updatedUser)
 }
 
-// getUser looks up a single user by email. Requires any authenticated caller.
+func (a *application) getUser(c *gin.Context) {
 	context := c.Request.Context()
 	userEmail := strings.TrimSpace(c.Query("email"))
 	if userEmail == "" {
