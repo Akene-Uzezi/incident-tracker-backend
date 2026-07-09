@@ -13,6 +13,13 @@ import (
 
 var testPool *pgxpool.Pool
 
+func mockAuthMiddleware(role string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Set("userRole", role)
+		c.Next()
+	}
+}
+
 func TestMain(m *testing.M) {
 	gin.SetMode(gin.TestMode)
 

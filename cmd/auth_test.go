@@ -21,13 +21,6 @@ type TestRegisterRequest struct {
 	Department string `json:"department"`
 }
 
-func mockAuthMiddleware(role string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Set("userRole", role)
-		c.Next()
-	}
-}
-
 func TestRegisterRoute(t *testing.T) {
 	db.TruncateTables(t, testPool)
 
