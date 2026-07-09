@@ -91,6 +91,8 @@ func TestGetIncidents(t *testing.T) {
 		IncidentStatus:      "unresolved",
 	}
 
+	jsonBody, _ := json.Marshal(payload)
+
 	a := &application{
 		origins: "*",
 		models:  db.NewModels(testPool),
@@ -101,4 +103,10 @@ func TestGetIncidents(t *testing.T) {
 
 	r := gin.Default()
 	r.GET("/api/v1/incidents", mockAuthMiddleware("admin"), a.getIncidents)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/incidents", bytes.NewBuffer(jsonBody))
+
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
 }
