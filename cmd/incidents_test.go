@@ -236,3 +236,71 @@ func TestUpdateIncidentStatusSuccess(t *testing.T) {
 
 	assert.Equal(t, "resolved", response["incidentStatus"])
 }
+
+func TestSubmitIncidentManagement(t *testing.T) {
+	db.TruncateTables(t, testPool)
+
+	gin.SetMode(gin.TestMode)
+
+	a := &application{
+		origins: "*",
+		models:  db.NewModels(testPool),
+	}
+	incidentPayload := &db.Incident{
+		PrincipalName:       "testName",
+		PrincipalGender:     "Male",
+		PrincipalDob:        "today",
+		PrincipalType:       "Patient",
+		PatientId:           "iajdaj232",
+		PatientWardDept:     "icu",
+		PeopleInvolved:      "peopleInvolved",
+		DateOfIncident:      "today",
+		TimeOfIncident:      "now",
+		LocationOfIncident:  "here",
+		IncidentWardDept:    "here?",
+		IsNearMiss:          false,
+		CauseGroup:          "causeGroup",
+		ReporterName:        "Akene Uzezi",
+		ReporterDesignation: "???",
+		Signature:           true,
+		ReporterInfo:        "some info",
+		ReporterDate:        "today",
+		SeverityLevel:       "minor",
+		IncidentStatus:      "unresolved",
+	}
+	err := insertIncident(incidentPayload, a, t)
+	assert.NoError(t, err)
+
+	insertPayload := db.IncidentManagement{
+		IncidentId: 3,
+
+		ImpactOnService:      "test",
+		ContributoryFactors:  "test",
+		ActionsTakenOutcomes: "test",
+		Recommendations:      "test",
+		LessonsLearned:       "test",
+
+		RiskSeverity:   4,
+		RiskLikelihood: 3,
+		RiskRating:     3,
+
+		OhsStaffDob:     "test",
+		OhsStaffAddress: "test",
+
+		ManagerName:        "test",
+		ManagerSignature:   true,
+		ManagerDesignation: "test",
+		ManagerDate:        "testdate",
+	}
+
+	jsonBody, _ := json.Marshal(&insertPayload)
+
+	r := gin.Default()
+	r.POST("/api/v1/incidents/:id/management", mockAuthMiddleware("admin"), a.submitIncidentManagement)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/api/v1/incidents/1/management", bytes.NewBuffer(jsonBody))
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
