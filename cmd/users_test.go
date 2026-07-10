@@ -102,3 +102,55 @@ func TestDisableUnauthorized(t *testing.T) {
 
 	assert.Equal(t, "Unauthorized. Must be a superadmin", response["error"])
 }
+
+func TestGetUsersUnauthorized(t *testing.T) {
+	db.TruncateTables(t, testPool)
+
+	gin.SetMode(gin.TestMode)
+
+	a := &application{
+		origins: "*",
+		models:  db.NewModels(testPool),
+	}
+
+	err := insertUser(a, t)
+	assert.NoError(t, err)
+
+	jsonBody, _ := json.Marshal(&map[string]any{
+		"test": "test",
+	})
+
+	r := gin.Default()
+	r.GET("/api/v1/users", mockAuthMiddleware("manager"), a.getUser)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/users?email=testuser@email.com", bytes.NewBuffer(jsonBody))
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusForbidden, w.Code)
+}
+
+func TestGetUsersSuccess(t *testing.T) {
+	db.TruncateTables(t, testPool)
+
+	gin.SetMode(gin.TestMode)
+
+	a := &application{
+		origins: "*",
+		models:  db.NewModels(testPool),
+	}
+
+	err := insertUser(a, t)
+	assert.NoError(t, err)
+
+	jsonBody, _ := json.Marshal(&map[string]any{
+		"test": "test",
+	})
+
+	r := gin.Default()
+	r.GET("/api/v1/users", mockAuthMiddleware("superadmin"), a.getUser)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/users?email=testuser@email.com", bytes.NewBuffer(jsonBody))
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
