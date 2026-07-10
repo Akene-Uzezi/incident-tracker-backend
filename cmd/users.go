@@ -101,6 +101,11 @@ func (a *application) enable(c *gin.Context) {
 }
 
 func (a *application) getUser(c *gin.Context) {
+	userRole := c.GetString("userRole")
+	if userRole != "superadmin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You are not allowed to access users"})
+		return
+	}
 	context := c.Request.Context()
 	userEmail := strings.TrimSpace(c.Query("email"))
 	if userEmail == "" {
