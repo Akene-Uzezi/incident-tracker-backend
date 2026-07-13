@@ -80,6 +80,8 @@ func (a *application) reportIncident(c *gin.Context) {
 func (a *application) getIncidents(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	dateFrom := c.DefaultQuery("dateFrom", "")
+	dateTo := c.DefaultQuery("dateTo", "")
 
 	if page < 1 {
 		page = 1
@@ -93,9 +95,44 @@ func (a *application) getIncidents(c *gin.Context) {
 
 	if userRole == "supervisor" || userRole == "reporter" {
 		userDepartment := c.GetString("userDepartment")
+		if dateFrom != "" && dateTo != "" {
+			incidents, totalPages, totalItems, err := a.models.Incidents.FetchBySupervisorByDate(context, limit, offset, userDepartment, dateFrom, dateTo)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			c.JSON(http.StatusOK, PaginatedIncidentResponse{
+				Data: incidents,
+				Pagination: PaginationMeta{
+					CurrentPage: page,
+					PageSize:    limit,
+					TotalItems:  totalItems,
+					TotalPages:  totalPages,
+				},
+			})
+			return
+		}
 		incidents, totalPages, totalItems, err := a.models.Incidents.FetchBySupervisor(context, limit, offset, userDepartment)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to execute database query"})
+			return
+		}
+		c.JSON(http.StatusOK, PaginatedIncidentResponse{
+			Data: incidents,
+			Pagination: PaginationMeta{
+				CurrentPage: page,
+				PageSize:    limit,
+				TotalItems:  totalItems,
+				TotalPages:  totalPages,
+			},
+		})
+		return
+	}
+
+	if dateFrom != "" && dateTo != "" {
+		incidents, totalPages, totalItems, err := a.models.Incidents.FetchIncidentsByDate(context, limit, offset, dateFrom, dateTo)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 		c.JSON(http.StatusOK, PaginatedIncidentResponse{

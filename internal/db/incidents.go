@@ -14,8 +14,10 @@ type IncidentsModel struct {
 	DB *pgxpool.Pool
 }
 
-type SeverityLevel string
-type IncidentStatus string
+type (
+	SeverityLevel  string
+	IncidentStatus string
+)
 
 const (
 	NearMiss SeverityLevel = "near miss"
@@ -113,7 +115,8 @@ func (m *IncidentsModel) Insert(ctx context.Context, incident *Incident) (*Incid
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39)
 		RETURNING id;
 	`
-	err := m.DB.QueryRow(ctx, query,
+	err := m.DB.QueryRow(
+		ctx, query,
 		incident.PrincipalName, incident.PrincipalGender, incident.PrincipalDob, incident.PrincipalType, incident.PatientId,
 		incident.PatientWardDept, incident.StaffJobTitle, incident.StaffPhone, incident.StaffPlaceOfWork, incident.StaffSite,
 		incident.PeopleInvolved, incident.DateOfIncident, incident.TimeOfIncident, incident.LocationOfIncident, incident.IncidentWardDept,
@@ -123,12 +126,66 @@ func (m *IncidentsModel) Insert(ctx context.Context, incident *Incident) (*Incid
 		incident.EquipmentNumber, incident.IsMedicalDevice, incident.ReporterName, incident.ReporterDesignation, incident.Signature,
 		incident.ReporterInfo, incident.ReporterDate, incident.SeverityLevel, incident.IncidentStatus,
 	).Scan(&incident.Id)
-
 	if err != nil {
 		return nil, fmt.Errorf("database query error: %w", err)
 	}
 
 	return incident, nil
+}
+
+func (m *IncidentsModel) FetchIncidentsByDate(ctx context.Context, limit, offset int, dateFrom, dateTo string) ([]IncidentReport, int, int, error) {
+	var totalItems int
+	err := m.DB.QueryRow(ctx, "SELECT COUNT(*) FROM incidents WHERE date_of_incident BETWEEN $1 AND $2", dateFrom, dateTo).Scan(&totalItems)
+	if err != nil {
+		return nil, 0, 0, fmt.Errorf("database query error: %w", err)
+	}
+
+	query := `
+		SELECT
+			id, principal_name, principal_gender, principal_dob, principal_type, patient_id,
+			patient_ward_dept, staff_job_title, staff_phone, staff_place_of_work, staff_site,
+			people_involved, date_of_incident, time_of_incident, location_of_incident, incident_ward_dept,
+			witnesses, witness_type, witness_ward_dept, witness_job_title, witness_phone,
+			is_near_miss, cause_group, causes, prescribing_doctor, treatment_received,
+			equipment_involved, equipment_model, equipment_sent_for_repair, equipment_withdrawn, equipment_retained,
+			equipment_number, is_medical_device, reporter_name, reporter_designation, signature,
+			reporter_info, reporter_date, severity_level, incident_status
+		FROM incidents
+		WHERE date_of_incident BETWEEN $1 AND $2
+		ORDER BY id DESC
+		LIMIT $3 OFFSET $4
+	`
+
+	rows, err := m.DB.Query(ctx, query, dateFrom, dateTo, limit, offset)
+	if err != nil {
+		return nil, 0, 0, fmt.Errorf("database query error: %w", err)
+	}
+	defer rows.Close()
+
+	var incidents []IncidentReport
+	for rows.Next() {
+		var inc IncidentReport
+		err := rows.Scan(
+			&inc.Id, &inc.PrincipalName, &inc.PrincipalGender, &inc.PrincipalDob, &inc.PrincipalType, &inc.PatientId,
+			&inc.PatientWardDept, &inc.StaffJobTitle, &inc.StaffPhone, &inc.StaffPlaceOfWork, &inc.StaffSite,
+			&inc.PeopleInvolved, &inc.DateOfIncident, &inc.TimeOfIncident, &inc.LocationOfIncident, &inc.IncidentWardDept,
+			&inc.Witnesses, &inc.WitnessType, &inc.WitnessWardDept, &inc.WitnessJobTitle, &inc.WitnessPhone,
+			&inc.IsNearMiss, &inc.CauseGroup, &inc.Causes, &inc.PrescribingDoctor, &inc.TreatmentReceived,
+			&inc.EquipmentInvolved, &inc.EquipmentModel, &inc.EquipmentSentForRepair, &inc.EquipmentWithdrawn, &inc.EquipmentRetained,
+			&inc.EquipmentNumber, &inc.IsMedicalDevice, &inc.ReporterName, &inc.ReporterDesignation, &inc.Signature,
+			&inc.ReporterInfo, &inc.ReporterDate, &inc.SeverityLevel, &inc.IncidentStatus,
+		)
+		if err != nil {
+			return nil, 0, 0, fmt.Errorf("database query error: %w", err)
+		}
+		incidents = append(incidents, inc)
+	}
+
+	totalPages := int(math.Ceil(float64(totalItems) / float64(limit)))
+	if totalPages == 0 {
+		totalPages = 1
+	}
+	return incidents, totalPages, totalItems, nil
 }
 
 func (m *IncidentsModel) FetchIncidents(ctx context.Context, limit, offset int) ([]IncidentReport, int, int, error) {
@@ -184,13 +241,81 @@ func (m *IncidentsModel) FetchIncidents(ctx context.Context, limit, offset int) 
 	return incidents, totalPages, totalItems, nil
 }
 
+func (m *IncidentsModel) FetchBySupervisorByDate(ctx context.Context, limit, offset int, department, dateFrom, dateTo string) ([]IncidentReport, int, int, error) {
+	var totalItems int
+	countQuery := `
+		SELECT COUNT(*)
+		FROM incidents
+		WHERE (date_of_incident BETWEEN $2 AND $3)
+			AND (LOWER(TRIM(incident_ward_dept)) = LOWER(TRIM($1))
+		   OR LOWER(TRIM(patient_ward_dept)) = LOWER(TRIM($1))
+		   OR LOWER(TRIM(staff_place_of_work)) = LOWER(TRIM($1))
+			)
+	`
+	err := m.DB.QueryRow(ctx, countQuery, department, dateFrom, dateTo).Scan(&totalItems)
+	if err != nil {
+		return nil, 0, 0, fmt.Errorf("database query error: %w", err)
+	}
+
+	query := `
+		SELECT
+			id, principal_name, principal_gender, principal_dob, principal_type, patient_id,
+			patient_ward_dept, staff_job_title, staff_phone, staff_place_of_work, staff_site,
+			people_involved, date_of_incident, time_of_incident, location_of_incident, incident_ward_dept,
+			witnesses, witness_type, witness_ward_dept, witness_job_title, witness_phone,
+			is_near_miss, cause_group, causes, prescribing_doctor, treatment_received,
+			equipment_involved, equipment_model, equipment_sent_for_repair, equipment_withdrawn, equipment_retained,
+			equipment_number, is_medical_device, reporter_name, reporter_designation, signature,
+			reporter_info, reporter_date, severity_level, incident_status
+		FROM incidents
+		WHERE (date_of_incident BETWEEN $2 AND $3)
+			AND (LOWER(TRIM(incident_ward_dept)) = LOWER(TRIM($1))
+		   OR LOWER(TRIM(patient_ward_dept)) = LOWER(TRIM($1))
+		   OR LOWER(TRIM(staff_place_of_work)) = LOWER(TRIM($1))
+			)
+		ORDER BY id DESC
+		LIMIT $4 OFFSET $5
+	`
+
+	rows, err := m.DB.Query(ctx, query, department, dateFrom, dateTo, limit, offset)
+	if err != nil {
+		return nil, 0, 0, fmt.Errorf("database query error: %w", err)
+	}
+	defer rows.Close()
+
+	var incidents []IncidentReport
+	for rows.Next() {
+		var inc IncidentReport
+		err := rows.Scan(
+			&inc.Id, &inc.PrincipalName, &inc.PrincipalGender, &inc.PrincipalDob, &inc.PrincipalType, &inc.PatientId,
+			&inc.PatientWardDept, &inc.StaffJobTitle, &inc.StaffPhone, &inc.StaffPlaceOfWork, &inc.StaffSite,
+			&inc.PeopleInvolved, &inc.DateOfIncident, &inc.TimeOfIncident, &inc.LocationOfIncident, &inc.IncidentWardDept,
+			&inc.Witnesses, &inc.WitnessType, &inc.WitnessWardDept, &inc.WitnessJobTitle, &inc.WitnessPhone,
+			&inc.IsNearMiss, &inc.CauseGroup, &inc.Causes, &inc.PrescribingDoctor, &inc.TreatmentReceived,
+			&inc.EquipmentInvolved, &inc.EquipmentModel, &inc.EquipmentSentForRepair, &inc.EquipmentWithdrawn, &inc.EquipmentRetained,
+			&inc.EquipmentNumber, &inc.IsMedicalDevice, &inc.ReporterName, &inc.ReporterDesignation, &inc.Signature,
+			&inc.ReporterInfo, &inc.ReporterDate, &inc.SeverityLevel, &inc.IncidentStatus,
+		)
+		if err != nil {
+			return nil, 0, 0, fmt.Errorf("database query error: %w", err)
+		}
+		incidents = append(incidents, inc)
+	}
+
+	totalPages := int(math.Ceil(float64(totalItems) / float64(limit)))
+	if totalPages == 0 {
+		totalPages = 1
+	}
+	return incidents, totalPages, totalItems, nil
+}
+
 func (m *IncidentsModel) FetchBySupervisor(ctx context.Context, limit, offset int, department string) ([]IncidentReport, int, int, error) {
 	var totalItems int
 
 	// 1. Update the Count Query to check all three possible department matches
 	countQuery := `
-		SELECT COUNT(*) 
-		FROM incidents 
+		SELECT COUNT(*)
+		FROM incidents
 		WHERE LOWER(TRIM(incident_ward_dept)) = LOWER(TRIM($1))
 		   OR LOWER(TRIM(patient_ward_dept)) = LOWER(TRIM($1))
 		   OR LOWER(TRIM(staff_place_of_work)) = LOWER(TRIM($1))
@@ -202,7 +327,7 @@ func (m *IncidentsModel) FetchBySupervisor(ctx context.Context, limit, offset in
 
 	// 2. Update the main selection Query with the same OR logic
 	query := `
-		SELECT 
+		SELECT
 			id, principal_name, principal_gender, principal_dob, principal_type, patient_id,
 			patient_ward_dept, staff_job_title, staff_phone, staff_place_of_work, staff_site,
 			people_involved, date_of_incident, time_of_incident, location_of_incident, incident_ward_dept,
@@ -211,12 +336,12 @@ func (m *IncidentsModel) FetchBySupervisor(ctx context.Context, limit, offset in
 			equipment_involved, equipment_model, equipment_sent_for_repair, equipment_withdrawn, equipment_retained,
 			equipment_number, is_medical_device, reporter_name, reporter_designation, signature,
 			reporter_info, reporter_date, severity_level, incident_status
-		FROM incidents 
+		FROM incidents
 		WHERE LOWER(TRIM(incident_ward_dept)) = LOWER(TRIM($1))
 		   OR LOWER(TRIM(patient_ward_dept)) = LOWER(TRIM($1))
 		   OR LOWER(TRIM(staff_place_of_work)) = LOWER(TRIM($1))
-		ORDER BY id DESC 
-		LIMIT $2 OFFSET $3	
+		ORDER BY id DESC
+		LIMIT $2 OFFSET $3
 	`
 	rows, err := m.DB.Query(ctx, query, department, limit, offset)
 	if err != nil {
