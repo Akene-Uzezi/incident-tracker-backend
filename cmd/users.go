@@ -132,4 +132,10 @@ func (a *application) userResetPassword(c *gin.Context) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "you are not allowed to reset another users password"})
 		return
 	}
+
+	updateHashPassword, err := HashPassword(userResetRequest.NewPassword)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to hash new password"})
+		return
+	}
 }
