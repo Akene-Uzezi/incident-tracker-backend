@@ -62,3 +62,8 @@ type PaginatedIncidentResponse struct {
 type IncidentStatusUpdate struct {
 	Status string `json:"status" binding:"required"`
 }
+
+type UserResetPassword struct {
+	Email       string `json:"email" binding:"required"`
+	NewPassword string `json:"newPassword" binding:"required"`
+}

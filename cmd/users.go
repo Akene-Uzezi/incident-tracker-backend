@@ -119,3 +119,6 @@ func (a *application) getUser(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, user)
 }
+
+func (a *application) userResetPassword(c *gin.Context) {
+}
