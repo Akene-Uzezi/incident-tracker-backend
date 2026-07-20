@@ -271,6 +271,32 @@ This document catalogs every API route that deals with users in the Issue Tracke
 
 ---
 
+### 10. Search Users
+
+| Attribute | Value |
+|-----------|-------|
+| **Method** | `GET` |
+| **Path** | `/api/v1/searchUsers` |
+| **Auth Required** | Yes (`authMiddleware`) |
+| **Role Required** | `superadmin` |
+| **Handler** | `cmd/users.go:184` (`searchUsers`) |
+
+**Query Parameters**:
+
+| Parameter | Type | Required | Validation |
+|-----------|------|----------|------------|
+| `searchQuery` | string | No | Non-empty string triggers search; empty string returns all users |
+
+**Output**:
+
+| Status | Response |
+|--------|----------|
+| `200 OK` | `{"users": [{user objects}]}` |
+| `403 Forbidden` | `{"error": "Only superadmins are allowed access to this route"}` |
+| `500 Internal Server Error` | `{"error": "..."}` |
+
+---
+
 ## Authentication Middleware
 
 All protected user routes (except login) are guarded by `authMiddleware` (`cmd/middleware.go:12`). It:
