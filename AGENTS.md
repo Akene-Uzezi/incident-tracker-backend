@@ -5,8 +5,8 @@
 The Issue Tracker is a RESTful API for managing workplace incidents and safety reports built with Go, Gin, and PostgreSQL.
 
 **Code Metrics:**
-- Total Go code: ~1800 lines
-- 20 Go source files
+- Total Go code: 3150 lines
+- 25 Go source files
 - Architecture: Clean layered (presentation → application → data → infrastructure)
 
 ## Development Commands
