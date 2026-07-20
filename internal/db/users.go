@@ -144,7 +144,7 @@ func (m *UserModel) SearchUsers(ctx context.Context, searchQuery string) ([]User
 	query := `
 		SELECT name, email, role, department, disabled
 		FROM users
-		WHERE (name || ' ' || email || ' ' || role || ' ' || department || ' ' disabled) ILIKE $1;
+		WHERE (name || ' ' || email || ' ' || role || ' ' || department || ' ' || disabled) ILIKE $1;
 	`
 
 	rows, err := m.DB.Query(ctx, query, safeSearchTerm)
