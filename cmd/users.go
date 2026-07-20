@@ -38,7 +38,7 @@ func (a *application) update(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to perform database query"})
 		return
 	}
-	c.JSON(http.StatusOK, updatedUser)
+	c.JSON(http.StatusOK, gin.H{"user": updatedUser})
 }
 
 func (a *application) disable(c *gin.Context) {

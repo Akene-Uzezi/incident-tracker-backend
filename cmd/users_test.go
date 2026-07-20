@@ -38,37 +38,6 @@ func TestUpdateUnauthorized(t *testing.T) {
 	assert.Equal(t, "Unauthorized. Must be a superadmin", response["error"])
 }
 
-func TestUpdateSuccess(t *testing.T) {
-	a := &application{
-		origins: "*",
-		models:  db.NewModels(testPool),
-	}
-	err := insertUser(a, t)
-	assert.NoError(t, err)
-
-	payload := &UpdateRequest{
-		Name:       "testuser",
-		Email:      "testuser@example.com",
-		Role:       "manager",
-		Department: "gopc",
-	}
-	jsonBody, _ := json.Marshal(&payload)
-
-	r := gin.Default()
-	r.PUT("/api/v1/update", mockAuthMiddleware("superadmin"), a.update)
-
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("PUT", "/api/v1/update", bytes.NewBuffer(jsonBody))
-	r.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusOK, w.Code)
-
-	var response map[string]any
-	err = json.Unmarshal(w.Body.Bytes(), &response)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "manager", response["role"])
-}
-
 func TestDisableUnauthorized(t *testing.T) {
 	db.TruncateTables(t, testPool)
 
@@ -234,4 +203,38 @@ func TestGetUsers(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestUpdateUser(t *testing.T) {
+	db.TruncateTables(t, testPool)
+
+	a := &application{
+		origins: "*",
+		models:  db.NewModels(testPool),
+	}
+
+	insertUser(a, t)
+
+	payload := &UpdateRequest{
+		Name:       "testuser",
+		Email:      "testuser@example.com",
+		Role:       "superadmin",
+		Department: "it",
+	}
+
+	jsonBody, _ := json.Marshal(&payload)
+	r := gin.Default()
+	r.PUT("/api/v1/update", mockAuthMiddleware("superadmin"), a.update)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("PUT", "/api/v1/update", bytes.NewBuffer(jsonBody))
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response map[string]any
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	user := response["user"].(map[string]any)
+
+	assert.Equal(t, "superadmin", user["role"])
 }
