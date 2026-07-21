@@ -120,9 +120,20 @@ CREATE TABLE comments (
 
 CREATE TABLE death_reports (
   id SERIAL PRIMARY KEY,
-  report_id INT,
   ref VARCHAR(100),
-  reported_date varchar(50)
+  reported_date VARCHAR(50),
+  opened_date VARCHAR(50),
+  submitted_time VARCHAR(50),
+  handler VARCHAR(255),
+  manager VARCHAR(255),
+  location VARCHAR(255),
+  department VARCHAR(255),
+  specialty VARCHAR(255),
+  exact_location VARCHAR(255),
+  coding VARCHAR(100),
+  type VARCHAR(100) DEFAULT 'Clinincal Incident',
+  category VARCHAR(255),
+  sub_category VARCHAR(100)
 );
 
 -- Seed Initial Super Admin
