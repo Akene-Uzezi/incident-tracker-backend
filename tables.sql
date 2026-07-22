@@ -120,9 +120,41 @@ CREATE TABLE comments (
 
 CREATE TABLE death_reports (
   id SERIAL PRIMARY KEY,
-  report_id INT,
   ref VARCHAR(100),
-  reported_date varchar(50)
+  reported_date VARCHAR(50),
+  opened_date VARCHAR(50),
+  submitted_time VARCHAR(50),
+  handler VARCHAR(255),
+  manager VARCHAR(255),
+  location VARCHAR(255),
+  department VARCHAR(255),
+  specialty VARCHAR(255),
+  exact_location VARCHAR(255),
+  coding VARCHAR(100),
+  type VARCHAR(100) DEFAULT 'Clinincal Incident',
+  category VARCHAR(255),
+  sub_category VARCHAR(100),
+  risk_grading VARCHAR(100),
+  result VARCHAR(255),
+  actual_harm VARCHAR(255),
+  potential_harm VARCHAR(255),
+  details TEXT,
+  incident_date VARCHAR(50),
+  incident_time VARCHAR(50),
+  description TEXT,
+  action_taken TEXT,
+  patient_involved BOOLEAN NOT NULL DEFAULT FALSE,
+  patient_told BOOLEAN NOT NULL DEFAULT FALSE,
+  family_told BOOLEAN NOT NULL DEFAULT FALSE,
+  what_family_told TEXT,
+  incident_investigation TEXT,
+  -- departmental review meeting
+  review_meeting_date VARCHAR(50),
+  quality_assurance_lead VARCHAR(255),
+  doctor_notified BOOLEAN NOT NULL DEFAULT FALSE,
+  meeting_discussion_points TEXT,
+  meeting_action_points TEXT,
+  level_of_investigation VARCHAR(100)
 );
 
 -- Seed Initial Super Admin
@@ -143,3 +175,9 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE INDEX IF NOT EXISTS idx_users_global_search_trgm
 ON users
 USING gin ((name || ' ' || email || ' ' || role || ' ' || department) gin_trgm_ops);
+
+CREATE INDEX IF NOT EXISTS idx_death_reports_id_desc ON death_reports (id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_death_reports_ref ON death_reports (ref);
+
+CREATE INDEX IF NOT EXISTS idx_death_reports_dept_subcat ON death_reports (department, sub_category);
