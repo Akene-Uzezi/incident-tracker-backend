@@ -1,23 +1,14 @@
 package main
 
 import (
+	"log"
+
 	"issueTracking/internal/db"
 	"issueTracking/internal/env"
 	"issueTracking/internal/logger"
-	"log"
 
 	"github.com/joho/godotenv"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
-
-type application struct {
-	port      int
-	jwtsecret string
-	db        *pgxpool.Pool
-	models    db.Models
-	origins   string
-}
 
 func main() {
 	logger.InitLogger()
