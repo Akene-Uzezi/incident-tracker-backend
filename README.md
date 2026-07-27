@@ -82,6 +82,10 @@ A superadmin user is seeded by default:
 - Email: `admin@example.com`
 - Password: The password is stored as a bcrypt hash in `tables.sql`. Use the database or reset it via code to set a known password.
 
+**Note:** New users registered via `/api/v1/auth/register` are assigned a default password of `redeemershealthvillage` if none is provided. This is separate from the pre-seeded superadmin.
+
+**Ports:** The API listens on `localhost:3001` when run directly and `localhost:3002` when using Docker Compose.
+
 ## Quick Usage
 
 Login to get a token:
@@ -191,7 +195,7 @@ curl "http://localhost:3002/api/v1/incidents/1/managementlogs" -H "Authorization
 | superadmin | All endpoints including user management (register, update, disable, enable, reset password, get user), report incidents, view all incidents, update any incident status, submit incident management reports, update incident management reports, add comments, view comments |
 | admin | Report incidents, view all incidents, update any incident status, submit incident management reports, update incident management reports, add comments, view comments |
 | supervisor | Report incidents, view own department incidents (matched via `incident_ward_dept`, `patient_ward_dept`, or `staff_place_of_work`) |
-| manager | Add comments, submit incident management reports, update incident management reports, view all incidents |
+| manager | Report incidents, view all incidents, view incident management reports and logs, add comments, view comments, submit incident management reports, update incident management reports |
 | reporter | Report incidents via public endpoint only, view own department incidents |
 
 ## Docker Commands

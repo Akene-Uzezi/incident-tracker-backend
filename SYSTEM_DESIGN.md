@@ -1,6 +1,6 @@
 # Issue Tracker - System Design
 
-**Code Metrics:** 3150 lines of Go, 25 source files
+**Code Metrics:** 3646 lines of Go, 28 source files
 
 ## System Overview
 
@@ -10,282 +10,116 @@ Go version: 1.26+
 
 ## Architecture Diagram
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              CLIENT LAYER                                    │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐          │
-│  │   Web Client    │    │  Mobile App     │    │  API Consumer   │          │
-│  └────────┬────────┘    └────────┬────────┘    └────────┬────────┘          │
-│           │                      │                      │                    │
-└           │                      │                      │                    │
-            ▼                      ▼                      ▼                    │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                     │
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           LOAD BALANCER                                     │
-│                      (Optional for production)                               │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                     │
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              API LAYER                                      │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                        Gin Web Framework                               │   │
-│  │  ┌─────────────────────────────────────────────────────────────┐    │   │
-│  │  │                     Router & Middleware                      │    │   │
-│  │  │  ┌─────────────┐  ┌─────────────┐  ┌──────────────────┐  │    │   │
-│  │  │  │ CORS        │  │ JWT Auth    │  │ Rate Limiting    │  │    │   │
-│  │  │  └─────────────┘  └─────────────┘  └──────────────────┘  │    │   │
-│  │  └─────────────────────────────────────────────────────────────┘    │   │
-│  │                              │                                        │   │
-│  │  ┌─────────────────────────────────────────────────────────────┐    │   │
-│  │  │                     Route Groups                            │    │   │
-│  │  │  /api/v1/ping          → Health Check Handler             │    │   │
-│  │  │  /api/v1/auth/*        → Auth Handlers (register, login, reset pwd)  │    │   │
-  │  │  │  /api/v1/incidents     → Incident Handlers (public report, auth list/update)  │    │   │
-  │  │  │  /api/v1/user          → User Handlers (get user by email)  │    │   │
-│  │  └─────────────────────────────────────────────────────────────┘    │   │
-│  │                              │                                        │   │
-│  │  ┌─────────────────────────────────────────────────────────────┐    │   │
-│  │  │                     Handlers                                │    │   │
-│  │  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐       │    │   │
-│  │  │  │ auth.go     │  │ incidents.go│  │ users.go    │       │    │   │
-  │  │  │  │ - register  │  │ - report    │  │ - update    │       │    │   │
-  │  │  │  │ - login     │  │ - get       │  │ - disable   │       │    │   │
-  │  │  │  │ - resetpwd  │  │ - updateStatus│ - enable  │       │    │   │
-  │  │  │  └─────────────┘  └─────────────┘  │ - get user  │       │    │   │
-  │  │  │                                     └─────────────┘       │    │   │
-│  │  │  ┌─────────────┐                                         │    │   │
-│  │  │  │ utils.go    │                                         │    │   │
-│  │  │  │ - hashPass  │                                         │    │   │
-│  │  │  │ - verifyPass│                                         │    │   │
-│  │  │  └─────────────┘                                         │    │   │
-│  │  └─────────────────────────────────────────────────────────────┘    │   │
-│  │                              │                                        │   │
-│  │                              ▼                                        │   │
-│  │  ┌─────────────────────────────────────────────────────────────┐    │   │
-│  │  │                   Application Layer                         │    │   │
-│  │  │  ┌─────────────────────────────────────────────────────┐  │    │   │
-│  │  │  │  type application struct {                          │  │    │   │
-│  │  │  │    port int                                         │  │    │   │
-│  │  │  │    jwtsecret string                                 │  │    │   │
-│  │  │  │    db *pgxpool.Pool                                 │  │    │   │
-│  │  │  │    models db.Models                                   │  │    │   │
-│  │  │  │    origins string                                     │  │    │   │
-│  │  │  │  }                                                   │  │    │   │
-│  │  │  └─────────────────────────────────────────────────────┘  │    │   │
-│  │  └─────────────────────────────────────────────────────────────┘    │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-│                              │                                              │
-│                              ▼                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                     │
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           DATA LAYER                                        │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                       Models                                        │   │
-│  │  ┌─────────────────────────────────────────────────────────────┐    │   │
-│  │  │  db.Models {                                               │    │   │
-│  │  │    Users UserModel                                          │    │   │
-│  │  │    Incidents IncidentsModel                                 │    │   │
-│  │  │    IncidentManagement IncidentManagementModel               │    │   │
-│  │  │  }                                                          │    │   │
-│  │  └─────────────────────────────────────────────────────────────┘    │   │
-│  │                              │                                        │   │
-│  │  ┌─────────────────┐    ┌─────────────────┐                        │   │
-│  │  │   users.go      │    │  incidents.go   │                        │   │
-│  │  │  - GetByEmail   │    │  - Insert       │                        │   │
-│  │  │  - Insert       │    │  - FetchIncidents                        │   │
-│  │  │  - Update       │    │  - FetchBySupervisor                     │   │
-  │  │  │  - DisableUser  │    │  - FetchById    │                        │   │
-  │  │  │  - EnableUser   │    │  - UpdateIncidentStatus                  │   │
-  │  │  │  - ResetPassword│    │                 │                        │   │
-  │  │  └─────────────────┘    └─────────────────┘                        │   │
-│  │                                                                     │   │
-│  │  
-│  │  │  ┌─────────────────────────────────────────────────────────────┐    │   │
-│  │  │  │  incidentmanagement.go                                     │    │   │
-│  │  │  │  - IncidentManagementModel (follow-up data access)         │    │   │
-│  │  │  │  └─────────────────────────────────────────────────────────────┘    │   │
-│  │  │                                                                     │   │┌─────────────────────────────────────────────────────────────┐    │   │
-│  │  │  db.go                                                      │    │   │
-│  │  │  - InitPool()  → Creates PGX connection pool              │    │   │
-│  │  │  - NewModels() → Factory for model instances               │    │   │
-│  │  └─────────────────────────────────────────────────────────────┘    │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-│                              │                                              │
-│                              ▼                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                     │
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        INFRASTRUCTURE LAYER                                 │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐          │
-│  │ PostgreSQL 16   │    │ Environment     │    │ Docker          │          │
-│  │ - users table   │    │ Variables       │    │ Compose         │          │
-│  │ - incidents     │    │ - dbConnStr     │    │ - postgres:16-  │          │
-│  │ - indexes       │    │ - jwtSecret     │    │   alpine        │          │
-│  │ - constraints   │    │ - PORT          │    │ - Air (hot     │          │
-│  │                 │    │ - allowedOrig.  │    │   reload)       │          │
-│  └─────────────────┘    └─────────────────┘    └─────────────────┘          │
-│                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-  │  │  Scripts                                                             │   │
-  │  │  - commit.sh        → Git helper                                    │   │
-  │  │  - login.sh         → psql shell into DB container                  │   │
-  │  └─────────────────────────────────────────────────────────────────────┘   │
-│                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │  Database Initialization                                             │   │
-│  │  - tables.sql → Auto-run via Docker initdb mechanism               │   │
-│  │  - Schema created on first container start                        │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    Web[Web Client] --> LB["LOAD BALANCER<br/>Optional for production"]
+    Mobile[Mobile App] --> LB
+    Consumer[API Consumer] --> LB
+    LB --> Gin[Gin Web Framework]
+    
+    subgraph Router["Router & Middleware"]
+        CORS[CORS]
+        JWT[JWT Auth]
+        Rate[Rate Limiting]
+    end
+    
+    subgraph Routes["Route Groups"]
+        Ping["/api/v1/ping"]
+        Auth["/api/v1/auth/*<br/>register, login, update, disable<br/>enable, resetpassword, userResetPassword"]
+        Incidents["/api/v1/incidents<br/>POST public, GET auth"]
+        IncidentsStatus["/api/v1/incidents/:id/status"]
+        Management["/api/v1/incidents/:id/management<br/>POST, GET, PUT"]
+        ManagementLogs["/api/v1/incidents/:id/managementlogs"]
+        Comments["/api/v1/incidents/comments<br/>POST, GET"]
+        Users["/api/v1/users"]
+        User["/api/v1/user"]
+        SearchU["/api/v1/searchUsers"]
+        SearchI["/api/v1/searchIncidents"]
+        DeathReport["/api/v1/deathreport"]
+        DeathReportUpdate["/api/v1/deathreport/:id"]
+        DeathSearch["/api/v1/searchDeathReport"]
+    end
+    
+    subgraph Handlers["Handlers"]
+        AuthGo[auth.go]
+        IncidentsGo[incidents.go]
+        UsersGo[users.go]
+        CommentsGo[comments.go]
+        MgmtGo[incidentmanagement.go]
+        UtilsGo[utils.go]
+    end
+    
+    App[Application Layer<br/>type application struct]
+    
+    Gin --> Router --> Routes --> Handlers --> App
+    
+    Models[db.Models]
+    UsersM[users.go]
+    IncidentsM[incidents.go]
+    MgmtM[incidentmanagement.go]
+    CommentsM[comments.go]
+    DBInit[db.go]
+    
+    App --> Models
+    Models --> UsersM
+    Models --> IncidentsM
+    Models --> MgmtM
+    Models --> CommentsM
+    Models --> DBInit
+    
+    PG[(PostgreSQL 16)] --> Env[env.go typed accessors]
+    Docker[docker-compose.yml] --> Scripts[scripts/]
+    Tables[tables.sql] --> PG
 ```
 
 ## Component Interaction Flow
 
-```
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│   Client     │────▶│     API      │────▶│  Database    │
-│              │     │              │     │              │
-└──────────────┘     └──────────────┘     └──────────────┘
-                           │
-                           ▼
-                    ┌──────────────┐
-                    │  Middleware  │
-                    │  (JWT Auth)  │
-                    └──────────────┘
-                           │
-                           ▼
-                    ┌──────────────┐
-                    │   Handler    │
-                    │  (Business  │
-                    │   Logic)     │
-                    └──────────────┘
-                           │
-                           ▼
-                    ┌──────────────┐
-                    │    Model     │
-                    │ (Data Access)│
-                    └──────────────┘
+```mermaid
+flowchart LR
+    Client[Client] --> API[API]
+    API --> DB[Database]
+    API --> Middleware[Middleware JWT Auth]
+    Middleware --> Handler[Handler Business Logic]
+    Handler --> Model[Model Data Access]
+    Model --> DB
 ```
 
 ## Data Flow Sequence
 
-```
-Client Request
-      │
-      ▼
-┌─────────────────┐
-│ HTTP Request    │
-│ POST /api/v1/auth/login
-│ Body: {email, password}
-└─────────────────┘
-      │
-      ▼
-┌─────────────────┐
-│ Gin Router      │
-│ matches route   │
-└─────────────────┘
-      │
-      ▼
-┌─────────────────┐
-│ Middleware      │
-│ (none for login)│
-└─────────────────┘
-      │
-      ▼
-┌─────────────────┐
-│ Handler         │
-│ login()         │
-│ 1. Validate     │
-│ 2. GetByEmail() │
-│ 3. Verify pass  │
-│ 4. Create JWT   │
-└─────────────────┘
-      │
-      ▼
-┌─────────────────┐
-│ Model Layer     │
-│ UserModel       │
-│ Query: SELECT   │
-│ WHERE email=$1  │
-└─────────────────┘
-      │
-      ▼
-┌─────────────────┐
-│ PostgreSQL      │
-│ Execute query   │
-└─────────────────┘
-      │
-      ▼
-┌─────────────────┐
-│ Response        │
-│ {token, user}   │
-└─────────────────┘
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant G as Gin Router
+    participant M as Middleware
+    participant H as Handler login
+    participant D as Model Layer
+    participant P as PostgreSQL
+    
+    C->>G: HTTP Request<br/>POST /api/v1/auth/login
+    G->>M: matches route
+    M->>H: none for login
+    H->>H: 1. Validate
+    H->>D: 2. GetByEmail()
+    D->>P: Query: SELECT WHERE email=$1
+    P-->>D: Query Results
+    D-->>H: User Model
+    H->>H: 3. Verify pass
+    H->>H: 4. Create JWT
+    H-->>C: Response {token, user}
 ```
 
 ## Request-Response Flow
 
-```
-                    ┌─────────────────────────────────────────┐
-                    │              REQUEST                  │
-                    └──────────────────┬────────────────────┘
-                                       │
-                                       ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                         HTTP SERVER                              │
-│  ┌──────────────────────────────────────────────────────────┐    │
-│  │                     Gin Engine                            │    │
-│  │                                                          │    │
-│  │  1. CORS Middleware                                      │    │
-│  │  2. Route Matching                                       │    │
-│  │  3. Auth Middleware (if protected)                       │    │
-│  │     - Extract Bearer token                                │    │
-│  │     - Validate JWT signature                              │    │
-│  │     - Verify expiration                                   │    │
-│  │     - Set user context (userId, role, email, dept)      │    │
-│  │                                                          │    │
-│  │  4. Handler Execution                                    │    │
-│  │     - Input validation                                   │    │
-│  │     - Role-based authorization                           │    │
-│  │     - Business logic                                     │    │
-│  │                                                          │    │
-│  │  5. Response Serialization                               │    │
-│  └──────────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────────┘
-                                       │
-                                       ▼
-                    ┌─────────────────────────────────────────┐
-                    │            DATABASE LAYER               │
-                    │                                         │
-                    │  ┌────────────────────────────────────┐   │
-                    │  │      Connection Pool              │   │
-                    │  │  (Min: 2, Max: 10 connections)    │   │
-                    │  └────────────────────────────────────┘   │
-                    │                   │                       │
-                    │                   ▼                       │
-                    │  ┌────────────────────────────────────┐   │
-                    │  │         PGX Driver                 │   │
-                    │  │  - Parameterized queries           │   │
-                    │  │  - Connection pooling              │   │
-                    │  │  - Row scanning to structs         │   │
-                    │  └────────────────────────────────────┘   │
-                    │                                         │
-                    └─────────────────────────────────────────┘
-                                       │
-                                       ▼
-                    ┌─────────────────────────────────────────┐
-                    │            RESPONSE                     │
-                    └─────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    Req["REQUEST"] --> CORS["1. CORS Middleware"]
+    CORS --> Route["2. Route Matching"]
+    Route --> Auth["3. Auth Middleware<br/>- Extract Bearer token<br/>- Validate JWT signature<br/>- Verify expiration<br/>- Set user context"]
+    Auth --> Handler["4. Handler Execution<br/>- Input validation<br/>- Role-based authorization<br/>- Business logic"]
+    Handler --> Serialize["5. Response Serialization"]
+    Serialize --> Pool["Connection Pool<br/>Min: 2, Max: 10"]
+    Pool --> PGX["PGX Driver<br/>- Parameterized queries<br/>- Connection pooling<br/>- Row scanning to structs"]
+    PGX --> Res["RESPONSE"]
 ```
 
 ## System Components
@@ -315,35 +149,18 @@ Client Request
 
 ## Security Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                      SECURITY FLOW                              │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐         │
-│  │   Client    │───▶│  Password   │───▶│  Bcrypt     │         │
-│  │             │    │  (plain)    │    │  Hash       │         │
-│  └─────────────┘    └─────────────┘    └──────┬──────┘         │
-│                                                │                │
-│                                                ▼                │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐         │
-│  │   Login     │───▶│  JWT        │───▶│  Signed     │         │
-│  │  Request    │    │  Claims     │    │  Token      │         │
-│  └─────────────┘    └─────────────┘    └──────┬──────┘         │
-│                                                │                │
-│                                                ▼                │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐         │
-│  │  Protected  │───▶│  Extract    │───▶│  Validate   │         │
-│  │  Endpoint   │    │  Token      │    │  Signature  │         │
-│  └─────────────┘    └─────────────┘    └──────┬──────┘         │
-│                                                │                │
-│                                                ▼                │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐         │
-│  │   Access    │◀───│  Check      │◀───│  Verify     │         │
-│  │  Granted?   │    │  Role       │    │  Claims     │         │
-│  └─────────────┘    └─────────────┘    └─────────────┘         │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    Client[Client Password] --> Plain[Password plain]
+    Plain --> Bcrypt[Bcrypt Hash]
+    Bcrypt --> Login[Login Request]
+    Login --> Claims[JWT Claims]
+    Claims --> Token[Signed Token]
+    Token --> Extract[Extract Token]
+    Extract --> Validate[Validate Signature]
+    Validate --> Verify[Verify Claims]
+    Verify --> Check[Check Role]
+    Check --> Access{Access Granted?}
 ```
 
 ## Role Hierarchy
@@ -353,71 +170,37 @@ Client Request
 | **superadmin** | User management (register, update, disable/enable, reset password, get user), report incidents, view all incidents, update any incident status, add comments, view comments, submit and update incident management reports, view incident management reports and logs |
 | **admin** | Report incidents, view all incidents, update any incident status, add comments, view comments, submit and update incident management reports, view incident management reports and logs |
 | **supervisor** | Report incidents, view own department incidents (via `incident_ward_dept`) |
-| **manager** | Report incidents, add comments, submit incident management reports, update incident management reports, view all incidents, view comments, view incident management reports |
+| **manager** | Report incidents, view all incidents, view incident management reports and logs, add comments, view comments, submit incident management reports, update incident management reports |
 | **reporter** | Report incidents via public endpoint only, view own department incidents |
 
 ## Deployment Architecture
 
 ### Development
-```
-┌─────────────────────────────────────────────────────────┐
-│                  DEVELOPMENT ENVIRONMENT                 │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│  Local Machine                                         │
-│  ┌─────────────────────────────────────────────────┐   │
-│  │  Docker Compose                                 │   │
-│  │  ┌─────────────────────────────────────────┐    │   │
-│  │  │  Go Application (built from Dockerfile) │   │
-│  │  │  - Port: 3002                           │   │
-│  │  │  - Hot reload via Air                   │   │
-│  │  │  - Volume: .:/app (code mounting)       │   │
-│  │  │  - Excludes: scripts/ directory         │   │
-│  │  └─────────────────────────────────────────┘   │   │
-│  └─────────────────────────────────────────────────┘   │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
+
+```mermaid
+flowchart TD
+    Local[Local Machine] --> DockerCompose[Docker Compose]
+    DockerCompose --> App[Go Application<br/>- Port: 3001<br/>- Hot reload via Air<br/>- Volume: .:/app<br/>- Excludes: scripts/ directory]
 ```
 
 ### Production
-```
-┌─────────────────────────────────────────────────────────┐
-│                   PRODUCTION ARCHITECTURE               │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│  Internet Traffic                                       │
-│         │                                                │
-│         ▼                                                │
-│  ┌─────────────────┐                                      │
-│  │  Load Balancer  │                                      │
-│  │  (NGINX/HAProxy)│                                      │
-│  └────────┬────────┘                                      │
-│           │                                                │
-│           ▼                                                │
-│  ┌─────────────────┐    ┌─────────────────┐               │
-│  │  API Instance 1 │    │  API Instance 2 │               │
-│  │  (Go + Gin)     │    │  (Go + Gin)     │               │
-│  └────────┬────────┘    └────────┬────────┘               │
-│           │                      │                          │
-│           └───────────┬──────────┘                          │
-│                       │                                     │
-│                       ▼                                     │
-│  ┌────────────────────────────────────────────────────┐    │
-│  │               PostgreSQL Cluster                    │    │
-│  │  ┌─────────────┐    ┌─────────────┐    ┌───────┐   │    │
-│  │  │  Primary    │    │  Replica 1  │    │  ...  │   │    │
-│  │  │  (RW)       │    │  (RO)       │    │       │   │    │
-│  │  └─────────────┘    └─────────────┘    └───────┘   │    │
-│  └────────────────────────────────────────────────────┘    │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
+
+```mermaid
+flowchart TD
+    Internet[Internet Traffic] --> LB[Load Balancer<br/>NGINX/HAProxy]
+    LB --> API1[API Instance 1<br/>Go + Gin]
+    LB --> API2[API Instance 2<br/>Go + Gin]
+    API1 --> Primary[Primary<br/>RW]
+    API2 --> Primary
+    Primary --> Replica1[Replica 1<br/>RO]
+    Primary --> Replicas[Replicas ...]
 ```
 
 ## Performance Characteristics
 
 | Metric | Value |
 |--------|-------|
-| Max Connections | 10 (configurable) |
+| Max Connections | 10 |
 | JWT Expiration | 72 hours |
 | Request Timeout | 1s read, 5s write |
 | Idle Timeout | 30s |
