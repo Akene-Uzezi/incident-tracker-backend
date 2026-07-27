@@ -209,9 +209,17 @@ func (a *application) updateIncidentStatus(c *gin.Context) {
 }
 
 func (a *application) searchIncidents(c *gin.Context) {
-	searchQuery := c.Param("searchQuery")
+	searchQuery := c.Query("searchQuery")
 	if searchQuery == "" {
 		a.getIncidents(c)
 		return
 	}
+	context := c.Request.Context()
+	incidents, err := a.models.Incidents.SearchIncidents(context, searchQuery)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"incidents": incidents})
 }

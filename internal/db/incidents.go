@@ -428,3 +428,37 @@ func (m *IncidentsModel) UpdateIncidentStatus(context context.Context, id int, s
 	}
 	return incident, nil
 }
+
+func (m *IncidentsModel) SearchIncidents(context context.Context, searchQuery string) (*[]Incident, error) {
+	safeSearchTerm := fmt.Sprintf("%%%s%%", searchQuery)
+	query := `
+	SELECT * 
+	FROM incidents
+	WHERE (
+	principal_name || ' ' ||
+	COALESCE(patient_id, '') || ' ' ||
+	reporter_name || ' ' ||
+	COALESCE(prescribing_doctor, '') || ' ' ||
+	location_of_incident || ' ' ||
+	incident_ward_dept || ' ' ||
+	cause_group || ' ' ||
+	causes || ' ' ||
+	severity_level || ' ' ||
+	incident_status || ' ' ||
+	COALESCE(equipment_involved, '') || ' ' ||
+	COALESCE(equipment_number, '')
+	) ILIKE $1;
+	`
+	rows, err := m.DB.Query(context, query, safeSearchTerm)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute user query: %w", err)
+	}
+	defer rows.Close()
+
+	incidents, err := pgx.CollectRows(rows, pgx.RowToStructByName[Incident])
+	if err != nil {
+		return nil, fmt.Errorf("failed to scan rows into user struct: %w", err)
+	}
+
+	return &incidents, nil
+}

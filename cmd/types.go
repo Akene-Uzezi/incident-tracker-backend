@@ -4,7 +4,16 @@ import (
 	"issueTracking/internal/db"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+type application struct {
+	port      int
+	jwtsecret string
+	db        *pgxpool.Pool
+	models    db.Models
+	origins   string
+}
 
 type RegisterRequest struct {
 	Name       string `json:"name" binding:"required"`
