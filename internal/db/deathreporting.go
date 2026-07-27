@@ -136,3 +136,19 @@ func (m *DeathReportModel) InsertDeathReport(ctx context.Context, deathReport *D
 
 	return nil
 }
+
+func (m *DeathReportModel) SearchByID(ctx context.Context, id int) (*DeathReport, error) {
+	var deathReport DeathReport
+	query := `
+	SELECT * FROM death_reports
+	WHERE id = $1
+	`
+	err := m.DB.QueryRow(ctx, query, id).Scan(
+		&deathReport.ID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("database query error: %s", err)
+	}
+
+	return nil, nil
+}
