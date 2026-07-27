@@ -145,10 +145,44 @@ func (m *DeathReportModel) SearchByID(ctx context.Context, id int) (*DeathReport
 	`
 	err := m.DB.QueryRow(ctx, query, id).Scan(
 		&deathReport.ID,
+		&deathReport.Ref,
+		&deathReport.ReportedDate,
+		&deathReport.IncidentDate,
+		&deathReport.IncidentTime,
+		&deathReport.Department,
+		&deathReport.Location,
+		&deathReport.Category,
+		&deathReport.SubCategory,
+		&deathReport.Description,
+		&deathReport.ActionTaken,
+		&deathReport.OpenedDate,
+		&deathReport.SubmittedTime,
+		&deathReport.Handler,
+		&deathReport.Manager,
+		&deathReport.Specialty,
+		&deathReport.ExactLocation,
+		&deathReport.Coding,
+		&deathReport.Type,
+		&deathReport.RiskGrading,
+		&deathReport.Result,
+		&deathReport.ActualHarm,
+		&deathReport.PotentialHarm,
+		&deathReport.Details,
+		&deathReport.PatientInvolved,
+		&deathReport.PatientTold,
+		&deathReport.FamilyTold,
+		&deathReport.WhatFamilyTold,
+		&deathReport.IncidentInvestigation,
+		&deathReport.ReviewMeetingDate,
+		&deathReport.QualityAssuranceLead,
+		&deathReport.DoctorNotified,
+		&deathReport.MeetingDiscussionPoints,
+		&deathReport.MeetingActionPoints,
+		&deathReport.LevelOfInvestigation,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("database query error: %s", err)
 	}
 
-	return nil, nil
+	return &deathReport, nil
 }

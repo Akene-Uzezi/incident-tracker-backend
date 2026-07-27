@@ -1,8 +1,8 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
-	"strconv"
 
 	"issueTracking/internal/db"
 
@@ -26,11 +26,17 @@ func (a *application) deathReport(c *gin.Context) {
 }
 
 func (a *application) updateDeathReport(c *gin.Context) {
-	_, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid id parameter was passed"})
+	var updateRequest db.DeathReport
+	if err := c.ShouldBindJSON(&updateRequest); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("A bad request was passed: %v", err.Error())})
 		return
 	}
+	ctx := c.Request.Context()
+	deathReport, err := a.models.DeathReport.SearchByID(ctx, id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+	}
+	c.JSON(http.StatusOK, gin.H{"deathReport": deathReport})
 }
 
 func (a *application) searchDeathReport(c *gin.Context) {

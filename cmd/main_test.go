@@ -60,3 +60,10 @@ func insertUser(a *application, t *testing.T) error {
 	}
 	return nil
 }
+
+func insertDeathReport(payload *db.DeathReport, a *application, t *testing.T) error {
+	if err := a.models.DeathReport.InsertDeathReport(context.Background(), payload); err != nil {
+		return fmt.Errorf("error seeding testdata into deathreport: %v", err)
+	}
+	return nil
+}
