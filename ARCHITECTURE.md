@@ -1,6 +1,6 @@
 # Issue Tracker Architecture
 
-**Code Metrics:** 3150 lines of Go, 25 source files
+**Code Metrics:** 3646 lines of Go, 28 source files
 
 Go version: 1.26+
 
@@ -101,8 +101,19 @@ The models are:
 ## Data Flow
 
 ### Request Processing Flow
-```
-HTTP Request → Gin Router → Middleware (if applicable) → Handler → Validation → Model → Database → Model → Handler → Response → Client
+
+```mermaid
+flowchart LR
+    HTTP[HTTP Request] --> Router[Gin Router]
+    Router --> Middleware[Middleware]
+    Middleware --> Handler[Handler]
+    Handler --> Validation[Validation]
+    Validation --> Model[Model]
+    Model --> Database[Database]
+    Database --> Model
+    Model --> Handler
+    Handler --> Response[Response]
+    Response --> Client[Client]
 ```
 
 ### Detailed Authentication Flow
@@ -164,8 +175,8 @@ HTTP Request → Gin Router → Middleware (if applicable) → Handler → Valid
 ## Current Implementation Status
 
 **Code Metrics:**
-- Total Go code: 3150 lines
-- 25 Go source files
+- Total Go code: 3646 lines
+- 28 Go source files
 - Logger already implemented in `internal/logger/logger.go`
 - Test helpers implemented in `internal/db/testhelpers.go`
 
@@ -230,39 +241,22 @@ HTTP Request → Gin Router → Middleware (if applicable) → Handler → Valid
 ## Deployment Architecture
 
 ### Development Environment
-```
-┌─────────────────────────────────────────────────────────┐
-│                  DEVELOPMENT ENVIRONMENT                 │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│  Local Machine                                         │
-│  ┌─────────────────────────────────────────────────┐   │
-│  │  Docker Compose                                 │   │
-│  │  ┌─────────────────────────────────────────┐    │   │
-│  │  │  Go Application (built from Dockerfile) │   │
-│  │  │  - Port: 3002                           │   │
-│  │  │  - Hot reload via Air                   │   │
-│  │  │  - Volume: .:/app (code mounting)       │   │
-│  │  │  - Excludes: scripts/ directory         │   │
-│  │  └─────────────────────────────────────────┘   │   │
-│  └─────────────────────────────────────────────────┘   │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
+
+```mermaid
+flowchart TD
+    Local[Local Machine] --> DockerCompose[Docker Compose]
+    DockerCompose --> App[Go Application<br/>- Port: 3001<br/>- Hot reload via Air<br/>- Volume: .:/app<br/>- Excludes: scripts/ directory]
 ```
 
 ### Production Environment
-```
-Load Balancer (optional)
-     ↓
-API Instances (multiple for HA)
-     ↓
-PostgreSQL Database (primary)
-     ↓
-PostgreSQL Replicas (for read scaling)
-     ↓
-Backup Storage
-     ↓
-Monitoring/Logging Services
+
+```mermaid
+flowchart LR
+    LB[Load Balancer<br/>Optional] --> API[API Instances<br/>Multiple for HA]
+    API --> Primary[(PostgreSQL Primary)]
+    Primary --> Replica[(PostgreSQL Replicas<br/>Read Scaling)]
+    Replica --> Backup[Backup Storage]
+    Backup --> Monitor[Monitoring / Logging Services]
 ```
 
 ### Key Production Considerations
@@ -353,59 +347,46 @@ Monitoring/Logging Services
 ## Diagrams
 
 ### Component Interaction Diagram
-```
-┌─────────────────┐    ┌──────────────────┐    ┌──────────────────┐
-│   Client App    │◄──►│   API Gateway    │◄──►│   Load Balancer  │
-└─────────────────┘    └──────────────────┘    └──────────────────┘
-                              │                         │
-                              ▼                         ▼
-                    ┌──────────────────┐        ┌──────────────────┐
-                    │   API Instance   │        │   API Instance   │
-                    └──────────────────┘        └──────────────────┘
-                              │                         │
-                              ▼                         ▼
-                    ┌──────────────────┐        ┌──────────────────┐
-                    │  Gin Router      │        │  Gin Router      │
-                    └──────────────────┘        └──────────────────┘
-                              │                         │
-              ┌───────────────┴─────────────┐ ┌───────────────┴─────────────┐
-              ▼                             ▼ ▼                             ▼
-    ┌──────────────────┐        ┌──────────────────┐  ┌──────────────────┐
-    │ Auth Middleware  │        │ Validation Layer │  │   Handler Logic  │
-    └──────────────────┘        └──────────────────┘  └──────────────────┘
-              │                         │           │
-              ▼                         ▼           ▼
-    ┌──────────────────┐        ┌──────────────────┐  ┌──────────────────┐
-    │   User Models    │◄───────┤   Incident Models│  │   Incident Mgmt  │
-    └──────────────────┘        └──────────────────┘  └──────────────────┘
-              │                         │           │
-              └─────────────┬───────────┘└──────────┬─────────────┘
-                            ▼                       ▼
-                    ┌─────────────────────────────────────┐
-                    │   PostgreSQL Database Connection    │
-                    └─────────────────────────────────────┘
-                                      │
-                                      ▼
-                            ┌──────────────────┐
-                            │  PostgreSQL DB   │
-                            └──────────────────┘
+
+```mermaid
+flowchart LR
+    Client[Client App] <--> Gateway[API Gateway]
+    Gateway <--> LB[Load Balancer]
+    LB --> Inst1[API Instance]
+    LB --> Inst2[API Instance]
+    Inst1 --> Router1[Gin Router]
+    Inst2 --> Router2[Gin Router]
+    Router1 --> Auth[Auth Middleware]
+    Router1 --> Valid[Validation Layer]
+    Router1 --> Handler[Handler Logic]
+    Auth --> Users[User Models]
+    Valid --> Incidents[Incident Models]
+    Handler --> Mgmt[Incident Mgmt]
+    Users --> DB[(PostgreSQL DB)]
+    Incidents --> DB
+    Mgmt --> DB
 ```
 
 ### Data Flow Diagram
-```
-HTTP Request
-     ↓
-[Route Matching] → [Middleware Auth] → [Handler Function]
-     ↓                     ↓                    ↓
-[Input Validation] ← [Context User Data]    [Business Rules]
-     ↓                     ↓                    ↓
-[Call Model Method] → [Parameterized Query] → [Database]
-     ↓                     ↓                    ↓
-[Process Results] ← [Scan to Struct]     ← [Query Results]
-     ↓                     ↓                    ↓
-[Format Response] ← [Error Handling]     ← [Database Errors]
-     ↓
-HTTP Response
+
+```mermaid
+flowchart LR
+    HTTP[HTTP Request] --> Route[Route Matching]
+    Route --> Middleware[Middleware Auth]
+    Middleware --> Handler[Handler Function]
+    Route --> Input[Input Validation]
+    Middleware --> Context[Context User Data]
+    Handler --> Rules[Business Rules]
+    Handler --> Model[Call Model Method]
+    Model --> SQL[Parameterized Query]
+    SQL --> DB[(Database)]
+    DB --> Scan[Scan to Struct]
+    Scan --> Results[Process Results]
+    Results --> Errors[Error Handling]
+    Errors --> Format[Format Response]
+    DB --> DBErrors[Database Errors]
+    DBErrors --> Format
+    Format --> Response[HTTP Response]
 ```
 
 ## Conclusion
