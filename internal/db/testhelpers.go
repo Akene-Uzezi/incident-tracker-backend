@@ -96,7 +96,7 @@ func SetupTestDBSuite() (*pgxpool.Pool, func(), error) {
 func TruncateTables(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 
-	_, err := pool.Exec(context.Background(), "TRUNCATE TABLE users, incidents, incident_logs, comments RESTART IDENTITY CASCADE;")
+	_, err := pool.Exec(context.Background(), "TRUNCATE TABLE users, incidents, incident_logs, comments, death_reports RESTART IDENTITY CASCADE;")
 	if err != nil {
 		t.Fatalf("failed to truncatetables: %v", err)
 	}

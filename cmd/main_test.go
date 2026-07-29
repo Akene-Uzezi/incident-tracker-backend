@@ -67,3 +67,47 @@ func insertDeathReport(payload *db.DeathReport, a *application, t *testing.T) er
 	}
 	return nil
 }
+
+func insertDeathReportWithPayload(a *application, t *testing.T) error {
+	payload := &db.DeathReport{
+		Ref:                     "DR-2026-001",
+		ReportedDate:            "2026-07-29",
+		IncidentDate:            "2026-07-28",
+		IncidentTime:            "14:30",
+		Department:              "Cardiology",
+		Location:                "Building A",
+		Category:                "Clinical Incident",
+		SubCategory:             "Patient Care",
+		Description:             "Test death report description for automated testing.",
+		ActionTaken:             "Immediate review initiated.",
+		OpenedDate:              "2026-07-29",
+		SubmittedTime:           "09:00",
+		Handler:                 "Dr. John Doe",
+		Manager:                 "Jane Smith",
+		Specialty:               "Internal Medicine",
+		ExactLocation:           "Ward 3, Bed 12",
+		Coding:                  "COD-101",
+		Type:                    "Clinical Incident",
+		RiskGrading:             "High",
+		Result:                  "Under Review",
+		ActualHarm:              "Severe",
+		PotentialHarm:           "Critical",
+		Details:                 "Additional test details regarding the event.",
+		PatientInvolved:         true,
+		PatientTold:             true,
+		FamilyTold:              true,
+		WhatFamilyTold:          "Family was informed by the attending physician.",
+		IncidentInvestigation:   "Investigation ongoing by QA lead.",
+		ReviewMeetingDate:       "2026-08-01",
+		QualityAssuranceLead:    "Dr. Alice Johnson",
+		DoctorNotified:          true,
+		MeetingDiscussionPoints: "Discussed protocol adherence and timeline of events.",
+		MeetingActionPoints:     "Update ward monitoring checklists.",
+		LevelOfInvestigation:    "Comprehensive",
+	}
+	if err := a.models.DeathReport.InsertDeathReport(context.Background(), payload); err != nil {
+		return fmt.Errorf("error inserting seed data: %w", err)
+	}
+
+	return nil
+}
