@@ -182,10 +182,109 @@ Get comments for incident (requires admin or manager):
 curl "http://localhost:3002/api/v1/incidents/comments?incidentId=1" -H "Authorization: Bearer $TOKEN"
 ```
 
-Get incident management logs (requires admin role):
+Get incident management logs (requires admin or manager role):
 
 ```bash
 curl "http://localhost:3002/api/v1/incidents/1/managementlogs" -H "Authorization: Bearer $TOKEN"
+```
+
+Report a death (no auth required):
+
+```bash
+curl -X POST http://localhost:3002/api/v1/deathreport \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ref": "DR-001",
+    "reportedDate": "2026-06-09",
+    "incidentDate": "2026-06-09",
+    "incidentTime": "14:00",
+    "department": "IT",
+    "location": "Ward A",
+    "category": "Category",
+    "subCategory": "SubCategory",
+    "description": "Description",
+    "actionTaken": "Action taken",
+    "openedDate": "2026-06-09",
+    "submittedTime": "14:00",
+    "handler": "Handler",
+    "manager": "Manager",
+    "specialty": "Specialty",
+    "exactLocation": "Exact Location",
+    "coding": "Coding",
+    "type": "Type",
+    "riskGrading": "High",
+    "result": "Result",
+    "actualHarm": "Actual Harm",
+    "potentialHarm": "Potential Harm",
+    "details": "Details",
+    "patientInvolved": true,
+    "patientTold": true,
+    "familyTold": true,
+    "whatFamilyTold": "What family told",
+    "incidentInvestigation": "Investigation",
+    "reviewMeetingDate": "2026-06-09",
+    "qualityAssuranceLead": "QA Lead",
+    "doctorNotified": true,
+    "meetingDiscussionPoints": "Discussion points",
+    "meetingActionPoints": "Action points",
+    "levelOfInvestigation": "Level"
+  }'
+```
+
+Update a death report (no auth required):
+
+```bash
+curl -X PUT http://localhost:3002/api/v1/deathreport \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": 1,
+    "ref": "DR-001",
+    "reportedDate": "2026-06-09",
+    "incidentDate": "2026-06-09",
+    "incidentTime": "14:00",
+    "department": "IT",
+    "location": "Ward A",
+    "category": "Category",
+    "subCategory": "SubCategory",
+    "description": "Updated description",
+    "actionTaken": "Updated action",
+    "openedDate": "2026-06-09",
+    "submittedTime": "14:00",
+    "handler": "Handler",
+    "manager": "Manager",
+    "specialty": "Specialty",
+    "exactLocation": "Exact Location",
+    "coding": "Coding",
+    "type": "Type",
+    "riskGrading": "High",
+    "result": "Result",
+    "actualHarm": "Actual Harm",
+    "potentialHarm": "Potential Harm",
+    "details": "Details",
+    "patientInvolved": true,
+    "patientTold": true,
+    "familyTold": true,
+    "whatFamilyTold": "What family told",
+    "incidentInvestigation": "Investigation",
+    "reviewMeetingDate": "2026-06-09",
+    "qualityAssuranceLead": "QA Lead",
+    "doctorNotified": true,
+    "meetingDiscussionPoints": "Discussion points",
+    "meetingActionPoints": "Action points",
+    "levelOfInvestigation": "Level"
+  }'
+```
+
+Get all death reports (no auth required):
+
+```bash
+curl "http://localhost:3002/api/v1/deathreports?page=1&limit=10"
+```
+
+Search death reports (no auth required):
+
+```bash
+curl "http://localhost:3002/api/v1/searchDeathReport?searchQuery=DR-001"
 ```
 
 ## Role Permissions
