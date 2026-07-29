@@ -35,13 +35,16 @@ func (a *application) updateDeathReport(c *gin.Context) {
 	existingReport, err := a.models.DeathReport.SearchByID(ctx, updateRequest.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
-	if existingReport != nil {
+	if existingReport == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
-	existingReport = &updateRequest
-	c.JSON(http.StatusOK, gin.H{"deathReport": existingReport})
+	if err := a.models.DeathReport.UpdateDeathReport(ctx, &updateRequest); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 }
 
 func (a *application) searchDeathReport(c *gin.Context) {

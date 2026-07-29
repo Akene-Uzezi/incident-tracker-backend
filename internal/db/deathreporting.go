@@ -186,3 +186,7 @@ func (m *DeathReportModel) SearchByID(ctx context.Context, id int) (*DeathReport
 
 	return &deathReport, nil
 }
+
+func (m *DeathReportModel) UpdateDeathReport(ctx context.Context, reportUpdate *DeathReport) error {
+	return nil
+}
