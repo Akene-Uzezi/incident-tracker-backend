@@ -180,7 +180,5 @@ func TestUpdateDeathReport(t *testing.T) {
 	req, _ := http.NewRequest("PUT", "/api/v1/deathreport", bytes.NewBuffer(reqPayload))
 	r.ServeHTTP(w, req)
 
-	t.Logf("error: %v", response["error"])
-
 	assert.Equal(t, http.StatusOK, w.Code)
 }
