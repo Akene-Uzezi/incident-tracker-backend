@@ -62,12 +62,20 @@ func (a *application) getDeathReports(c *gin.Context) {
 
 	offset := (page - 1) * limit
 	ctx := c.Request.Context()
-	deathReports, err := a.models.DeathReport.GetDeathReports(ctx, limit, offset)
+	deathReports, totalPages, totalItems, err := a.models.DeathReport.GetDeathReports(ctx, limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"deathReports": deathReports})
+	c.JSON(http.StatusOK, gin.H{"deathReports": PaginatedDeathReportResponse{
+		Data: deathReports,
+		Pagination: PaginationMeta{
+			CurrentPage: page,
+			PageSize:    limit,
+			TotalItems:  totalItems,
+			TotalPages:  totalPages,
+		},
+	}})
 }
 
 func (a *application) searchDeathReport(c *gin.Context) {
