@@ -127,40 +127,60 @@ func TestInsertDeathReportSuccess(t *testing.T) {
 	assert.Equal(t, "The death has been reported", response["message"])
 }
 
-//	func TestUpdateDeathReport(t *testing.T) {
-//		payload := map[string]any{
-//			"reportedDate":            "22/07/2026",
-//			"incidentDate":            "21/07/2026",
-//			"incidentTime":            "14:30",
-//			"department":              "ICU",
-//			"location":                "Main Hospital",
-//			"category":                "Mortality",
-//			"subCategory":             "Unexpected death",
-//			"description":             "Patient experienced acute cardiac arrest following surgical procedure.",
-//			"actionTaken":             "CPR initiated immediately; resuscitation team responded. Pronounced dead at 15:05.",
-//			"openedDate":              "22/07/2026",
-//			"submittedTime":           "08:00",
-//			"handler":                 "Dr. John Doe",
-//			"manager":                 "Jane Smith",
-//			"specialty":               "Cardiology",
-//			"exactLocation":           "Bed 4, ICU Ward 2",
-//			"coding":                  "ICD-10-I46.9",
-//			"type":                    "Clinical Incident",
-//			"riskGrading":             "High",
-//			"result":                  "Fatal",
-//			"actualHarm":              "Severe / Death",
-//			"potentialHarm":           "Severe",
-//			"details":                 "Patient was undergoing routine post-op monitoring.",
-//			"patientInvolved":         true,
-//			"patientTold":             false,
-//			"familyTold":              true,
-//			"whatFamilyTold":          "Family was informed about cardiac complications and unsuccessful resuscitation efforts.",
-//			"incidentInvestigation":   "Internal review initiated by QA panel.",
-//			"reviewMeetingDate":       "25/07/2026",
-//			"qualityAssuranceLead":    "Dr. Alice Johnson",
-//			"docNotified":             true,
-//			"meetingDiscussionPoints": "Reviewed timeline of medication administration and monitoring telemetry logs.",
-//			"meetingActionPoints":     "Audit telemetry equipment calibration and update post-op cardiac monitoring protocol.",
-//			"levelOfInvestigation":    "Level 3",
-//		}
-//	}
+func TestUpdateDeathReport(t *testing.T) {
+	db.TruncateTables(t, testPool)
+	payload := &db.DeathReport{
+		Ref:                     "DR-2026-001",
+		ReportedDate:            "2026-07-29",
+		IncidentDate:            "2026-07-28",
+		IncidentTime:            "14:30",
+		Department:              "Cardiology",
+		Location:                "Building A",
+		Category:                "Clinical Incident",
+		SubCategory:             "Patient Care",
+		Description:             "Test death report description for automated testing.",
+		ActionTaken:             "Immediate review initiated.",
+		OpenedDate:              "2026-07-29",
+		SubmittedTime:           "09:00",
+		Handler:                 "Dr. John Doe",
+		Manager:                 "Jane Smith",
+		Specialty:               "Internal Medicine",
+		ExactLocation:           "Ward 3, Bed 12",
+		Coding:                  "COD-101",
+		Type:                    "Clinical Incident",
+		RiskGrading:             "High",
+		Result:                  "Under Review",
+		ActualHarm:              "Severe",
+		PotentialHarm:           "Critical",
+		Details:                 "Additional test details regarding the event.",
+		PatientInvolved:         true,
+		PatientTold:             true,
+		FamilyTold:              true,
+		WhatFamilyTold:          "Family was informed by the attending physician.",
+		IncidentInvestigation:   "Investigation ongoing by QA lead.",
+		ReviewMeetingDate:       "2026-08-01",
+		QualityAssuranceLead:    "Dr. Alice Johnson",
+		DoctorNotified:          true,
+		MeetingDiscussionPoints: "Discussed protocol adherence and timeline of events.",
+		MeetingActionPoints:     "Update ward monitoring checklists.",
+		LevelOfInvestigation:    "Comprehensive",
+	}
+
+	a := &application{
+		origins: "*",
+		models:  db.NewModels(testPool),
+	}
+	err := insertDeathReport(payload, a, t)
+	assert.NoError(t, err, "error inserting seed data")
+	reqPayload, _ := json.Marshal(&payload)
+
+	r := gin.Default()
+	r.PUT("/api/v1/deathreport", mockAuthMiddleware("superadmin"), a.updateDeathReport)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("PUT", "/api/v1/deathreport", bytes.NewBuffer(reqPayload))
+	r.ServeHTTP(w, req)
+
+	t.Logf("error: %v", response["error"])
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
