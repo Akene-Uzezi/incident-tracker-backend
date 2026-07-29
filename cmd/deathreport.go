@@ -32,11 +32,16 @@ func (a *application) updateDeathReport(c *gin.Context) {
 		return
 	}
 	ctx := c.Request.Context()
-	deathReport, err := a.models.DeathReport.SearchByID(ctx, updateRequest.ID)
+	existingReport, err := a.models.DeathReport.SearchByID(ctx, updateRequest.ID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
-	c.JSON(http.StatusOK, gin.H{"deathReport": deathReport})
+	if existingReport != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	existingReport = &updateRequest
+	c.JSON(http.StatusOK, gin.H{"deathReport": existingReport})
 }
 
 func (a *application) searchDeathReport(c *gin.Context) {
