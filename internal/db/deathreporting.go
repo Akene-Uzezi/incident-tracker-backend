@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"math"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -231,11 +232,11 @@ func (m *DeathReportModel) UpdateDeathReport(ctx context.Context, reportUpdate *
 	return nil
 }
 
-func (m *DeathReportModel) GetDeathReports(ctx context.Context, limit, offset int) (*[]DeathReport, error) {
+func (m *DeathReportModel) GetDeathReports(ctx context.Context, limit, offset int) (*[]DeathReport, int, int, error) {
 	var totalItems int
 	err := m.DB.QueryRow(ctx, "SELECT COUNT(*) FROM death_reports").Scan(&totalItems)
 	if err != nil {
-		return nil, fmt.Errorf("database query error: %w", err)
+		return nil, 0, 0, fmt.Errorf("database query error: %w", err)
 	}
 	query := `
 		SELECT * FROM death_reports
@@ -244,12 +245,16 @@ func (m *DeathReportModel) GetDeathReports(ctx context.Context, limit, offset in
 	`
 	rows, err := m.DB.Query(ctx, query, limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("database query err: %w", err)
+		return nil, 0, 0, fmt.Errorf("database query err: %w", err)
 	}
 	defer rows.Close()
 	deathReport, err := pgx.CollectRows(rows, pgx.RowToStructByName[DeathReport])
 	if err != nil {
-		return nil, fmt.Errorf("database query error: %w", err)
+		return nil, 0, 0, fmt.Errorf("database query error: %w", err)
 	}
-	return &deathReport, nil
+	totalPages := int(math.Ceil(float64(totalItems) / float64(limit)))
+	if totalPages == 0 {
+		totalPages = 1
+	}
+	return &deathReport, totalPages, totalItems, nil
 }
