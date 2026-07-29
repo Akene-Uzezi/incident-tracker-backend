@@ -244,3 +244,53 @@ func TestGetDeathReports(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 }
+
+func TestSearchDeathReportsNoQuery(t *testing.T) {
+	db.TruncateTables(t, testPool)
+
+	a := &application{
+		origins: "*",
+		models:  db.NewModels(testPool),
+	}
+	err := insertDeathReportWithPayload(a, t)
+	assert.NoError(t, err)
+	dummyPayload, _ := json.Marshal(&map[string]any{
+		"test": "test",
+	})
+
+	r := gin.Default()
+	r.GET("/api/v1/searchDeathReports", a.searchDeathReport)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/searchDeathReports", bytes.NewBuffer(dummyPayload))
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestSearchDeathReports(t *testing.T) {
+	db.TruncateTables(t, testPool)
+
+	a := &application{
+		origins: "*",
+		models:  db.NewModels(testPool),
+	}
+	err := insertDeathReportWithPayload(a, t)
+	assert.NoError(t, err)
+	dummyPayload, _ := json.Marshal(&map[string]any{
+		"test": "test",
+	})
+
+	r := gin.Default()
+	r.GET("/api/v1/searchDeathReports", a.searchDeathReport)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/searchDeathReports?searchQuery=cardiology", bytes.NewBuffer(dummyPayload))
+	r.ServeHTTP(w, req)
+
+	var response map[string]any
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+
+	t.Log(response)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}

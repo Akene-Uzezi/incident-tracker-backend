@@ -194,6 +194,26 @@ USING gin ((
 ) gin_trgm_ops
 );
 
+CREATE INDEX IF NOT EXISTS idx_death_reports_global_search_trgm
+ON death_reports
+USING gin ((
+  COALESCE(ref, '') || ' ' ||
+  COALESCE(department, '') || ' ' ||
+  COALESCE(location, '') || ' ' ||
+  COALESCE(exact_location, '') || ' ' ||
+  COALESCE(handler, '') || ' ' ||
+  COALESCE(manager, '') || ' ' ||
+  COALESCE(specialty, '') || ' ' ||
+  COALESCE(coding, '') || ' ' ||
+  COALESCE(category, '') || ' ' ||
+  COALESCE(sub_category, '') || ' ' ||
+  COALESCE(description, '') || ' ' ||
+  COALESCE(details, '') || ' ' ||
+  COALESCE(action_taken, '') || ' ' ||
+  COALESCE(quality_assurance_lead, '') || ' ' ||
+  COALESCE(incident_investigation, '')
+) gin_trgm_ops);
+
 CREATE INDEX IF NOT EXISTS idx_death_reports_id_desc ON death_reports (id DESC);
 
 CREATE INDEX IF NOT EXISTS idx_death_reports_ref ON death_reports (ref);
