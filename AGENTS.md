@@ -129,8 +129,95 @@ curl "http://localhost:3002/api/v1/user?email=test@example.com" -H "Authorizatio
 # Get comments for incident (requires admin or manager)
 curl "http://localhost:3002/api/v1/incidents/comments?incidentId=1" -H "Authorization: Bearer $TOKEN"
 
-# Get incident management logs (requires admin role)
+# Get incident management logs (requires admin or manager role)
 curl "http://localhost:3002/api/v1/incidents/1/managementlogs" -H "Authorization: Bearer $TOKEN"
+
+# Report a death (no auth required)
+curl -X POST http://localhost:3002/api/v1/deathreport \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ref": "DR-001",
+    "reportedDate": "2026-06-09",
+    "incidentDate": "2026-06-09",
+    "incidentTime": "14:00",
+    "department": "IT",
+    "location": "Ward A",
+    "category": "Category",
+    "subCategory": "SubCategory",
+    "description": "Description",
+    "actionTaken": "Action taken",
+    "openedDate": "2026-06-09",
+    "submittedTime": "14:00",
+    "handler": "Handler",
+    "manager": "Manager",
+    "specialty": "Specialty",
+    "exactLocation": "Exact Location",
+    "coding": "Coding",
+    "type": "Type",
+    "riskGrading": "High",
+    "result": "Result",
+    "actualHarm": "Actual Harm",
+    "potentialHarm": "Potential Harm",
+    "details": "Details",
+    "patientInvolved": true,
+    "patientTold": true,
+    "familyTold": true,
+    "whatFamilyTold": "What family told",
+    "incidentInvestigation": "Investigation",
+    "reviewMeetingDate": "2026-06-09",
+    "qualityAssuranceLead": "QA Lead",
+    "doctorNotified": true,
+    "meetingDiscussionPoints": "Discussion points",
+    "meetingActionPoints": "Action points",
+    "levelOfInvestigation": "Level"
+  }'
+
+# Update a death report (no auth required)
+curl -X PUT http://localhost:3002/api/v1/deathreport \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": 1,
+    "ref": "DR-001",
+    "reportedDate": "2026-06-09",
+    "incidentDate": "2026-06-09",
+    "incidentTime": "14:00",
+    "department": "IT",
+    "location": "Ward A",
+    "category": "Category",
+    "subCategory": "SubCategory",
+    "description": "Updated description",
+    "actionTaken": "Updated action",
+    "openedDate": "2026-06-09",
+    "submittedTime": "14:00",
+    "handler": "Handler",
+    "manager": "Manager",
+    "specialty": "Specialty",
+    "exactLocation": "Exact Location",
+    "coding": "Coding",
+    "type": "Type",
+    "riskGrading": "High",
+    "result": "Result",
+    "actualHarm": "Actual Harm",
+    "potentialHarm": "Potential Harm",
+    "details": "Details",
+    "patientInvolved": true,
+    "patientTold": true,
+    "familyTold": true,
+    "whatFamilyTold": "What family told",
+    "incidentInvestigation": "Investigation",
+    "reviewMeetingDate": "2026-06-09",
+    "qualityAssuranceLead": "QA Lead",
+    "doctorNotified": true,
+    "meetingDiscussionPoints": "Discussion points",
+    "meetingActionPoints": "Action points",
+    "levelOfInvestigation": "Level"
+  }'
+
+# Get all death reports (no auth required)
+curl "http://localhost:3002/api/v1/deathreports?page=1&limit=10"
+
+# Search death reports (no auth required)
+curl "http://localhost:3002/api/v1/searchDeathReport?searchQuery=DR-001"
 ```
 
 ## Role Permissions
@@ -142,6 +229,70 @@ curl "http://localhost:3002/api/v1/incidents/1/managementlogs" -H "Authorization
 | supervisor | Report incidents, view own department incidents (matched via `incident_ward_dept`, `patient_ward_dept`, or `staff_place_of_work`) |
 | manager | Report incidents, view all incidents, view incident management reports and logs, add comments, view comments, submit incident management reports, update incident management reports |
 | reporter | Report incidents via public endpoint only, view own department incidents |
+
+## Death Report
+
+The death report feature captures detailed information about workplace deaths. These endpoints are public and do not require authentication.
+
+### API Endpoints
+
+**POST /api/v1/deathreport** - Create death report
+- Requires: No authentication
+- Request body: `DeathReport` struct
+
+**PUT /api/v1/deathreport** - Update death report
+- Requires: No authentication
+- Request body: `DeathReport` struct (must include `id`)
+
+**GET /api/v1/deathreports** - Get all death reports (paginated)
+- Requires: No authentication
+- Query Parameters: `page` (default 1), `limit` (default 10, max 50)
+
+**GET /api/v1/searchDeathReport** - Search death reports
+- Requires: No authentication
+- Query Parameters: `searchQuery` (if empty, returns all reports)
+
+### DeathReport Struct
+
+```go
+type DeathReport struct {
+    ID                      int    `json:"id"`
+    Ref                     string `json:"ref" binding:"required"`
+    ReportedDate            string `json:"reportedDate" binding:"required"`
+    IncidentDate            string `json:"incidentDate" binding:"required"`
+    IncidentTime            string `json:"incidentTime" binding:"required"`
+    Department              string `json:"department" binding:"required"`
+    Location                string `json:"location" binding:"required"`
+    Category                string `json:"category" binding:"required"`
+    SubCategory             string `json:"subCategory" binding:"required"`
+    Description             string `json:"description" binding:"required"`
+    ActionTaken             string `json:"actionTaken" binding:"required"`
+    OpenedDate              string `json:"openedDate"`
+    SubmittedTime           string `json:"submittedTime"`
+    Handler                 string `json:"handler"`
+    Manager                 string `json:"manager"`
+    Specialty               string `json:"specialty"`
+    ExactLocation           string `json:"exactLocation"`
+    Coding                  string `json:"coding"`
+    Type                    string `json:"type"`
+    RiskGrading             string `json:"riskGrading"`
+    Result                  string `json:"result"`
+    ActualHarm              string `json:"actualHarm"`
+    PotentialHarm           string `json:"potentialHarm"`
+    Details                 string `json:"details"`
+    PatientInvolved         bool   `json:"patientInvolved"`
+    PatientTold             bool   `json:"patientTold"`
+    FamilyTold              bool   `json:"familyTold"`
+    WhatFamilyTold          string `json:"whatFamilyTold"`
+    IncidentInvestigation   string `json:"incidentInvestigation"`
+    ReviewMeetingDate       string `json:"reviewMeetingDate"`
+    QualityAssuranceLead    string `json:"qualityAssuranceLead"`
+    DoctorNotified          bool   `json:"doctorNotified"`
+    MeetingDiscussionPoints string `json:"meetingDiscussionPoints"`
+    MeetingActionPoints     string `json:"meetingActionPoints"`
+    LevelOfInvestigation    string `json:"levelOfInvestigation"`
+}
+```
 
 ## Incident Management Form
 
@@ -201,32 +352,32 @@ The incident management report captures follow-up documentation after an inciden
 
 ```go
 type IncidentManagement struct {
-    ID                              int    `json:"id"`
-    IncidentID                      int    `json:"incidentId"`
-    ImpactOnService                 string `json:"impactOnService"`
-    ContributoryFactors             string `json:"contributoryFactors"`
-    ActionsTakenOutcomes            string `json:"actionsTakenOutcomes"`
-    Recommendations                 string `json:"recommendations"`
-    LessonsLearned                  string `json:"lessonsLearned"`
+    Id                              int    `json:"id"`
+    IncidentId                      int    `json:"incidentId"`
+    ImpactOnService                 string `json:"impactOnService" binding:"required"`
+    ContributoryFactors             string `json:"contributoryFactors" binding:"required"`
+    ActionsTakenOutcomes            string `json:"actionsTakenOutcomes" binding:"required"`
+    Recommendations                 string `json:"recommendations" binding:"required"`
+    LessonsLearned                  string `json:"lessonsLearned" binding:"required"`
     InformedPatient                 bool   `json:"informedPatient"`
     InformedRelative                bool   `json:"informedRelative"`
     InformedSeniorManager           bool   `json:"informedSeniorManager"`
     InformedPharmacist              bool   `json:"informedPharmacist"`
-    PoliceIncidentNumber            string `json:"policeIncidentNumber"`
-    InformedOther                   string `json:"informedOther"`
-    RiskSeverity                    int    `json:"riskSeverity"`
-    RiskLikelihood                  int    `json:"riskLikelihood"`
-    RiskRating                      int    `json:"riskRating"`
+    PoliceIncidentNumber            string `json:"policeIncidentNumber,omitempty"`
+    InformedOther                   string `json:"informedOther,omitempty"`
+    RiskSeverity                    int    `json:"riskSeverity" binding:"required"`
+    RiskLikelihood                  int    `json:"riskLikelihood" binding:"required"`
+    RiskRating                      int    `json:"riskRating" binding:"required"`
     OhsAbsenceOver3Days             bool   `json:"ohsAbsenceOver3Days"`
     OhsActOfViolenceOrDanger        bool   `json:"ohsActOfViolenceOrDanger"`
     OhsHospitalizationOver24Hours   bool   `json:"ohsHospitalizationOver24Hours"`
     OhsStaffName                    string `json:"ohsStaffName"`
     OhsStaffDob                     string `json:"ohsStaffDob"`
     OhsStaffAddress                 string `json:"ohsStaffAddress"`
-    ManagerName                     string `json:"managerName"`
-    ManagerSignature                bool   `json:"managerSignature"`
-    ManagerDesignation              string `json:"managerDesignation"`
-    ManagerDate                     string `json:"managerDate"`
+    ManagerName                     string `json:"managerName" binding:"required"`
+    ManagerSignature                bool   `json:"managerSignature" binding:"required"`
+    ManagerDesignation              string `json:"managerDesignation" binding:"required"`
+    ManagerDate                     string `json:"managerDate" binding:"required"` // date this was filled
 }
 ```
 
@@ -234,4 +385,6 @@ type IncidentManagement struct {
 
 A superadmin user is created by default:
 - Email: `admin@example.com`
-- Password: The default password is hashed with bcrypt. Check the database or reset via code to set a known password.
+- Password: The default password is hashed with bcrypt and stored in `tables.sql`. Check the database or reset it via code to set a known password.
+
+**Note:** New users registered via `/api/v1/auth/register` are assigned a default password of `redeemershealthvillage` if none is provided. This is separate from the pre-seeded superadmin.

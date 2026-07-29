@@ -297,6 +297,145 @@ This document catalogs every API route that deals with users in the Issue Tracke
 
 ---
 
+## Death Report Routes
+
+The death report feature is public and does not require authentication.
+
+### 1. Create Death Report
+
+| Attribute | Value |
+|-----------|-------|
+| **Method** | `POST` |
+| **Path** | `/api/v1/deathreport` |
+| **Auth Required** | No |
+| **Role Required** | None (public endpoint) |
+| **Handler** | `cmd/deathreport.go:13` (`deathReport`) |
+
+**Input Body** (`DeathReport`):
+
+| Field | Type | Required | Validation |
+|-------|------|----------|------------|
+| `ref` | string | Yes | Required |
+| `reportedDate` | string | Yes | Required |
+| `incidentDate` | string | Yes | Required |
+| `incidentTime` | string | Yes | Required |
+| `department` | string | Yes | Required |
+| `location` | string | Yes | Required |
+| `category` | string | Yes | Required |
+| `subCategory` | string | Yes | Required |
+| `description` | string | Yes | Required |
+| `actionTaken` | string | Yes | Required |
+| `openedDate` | string | No | Optional |
+| `submittedTime` | string | No | Optional |
+| `handler` | string | No | Optional |
+| `manager` | string | No | Optional |
+| `specialty` | string | No | Optional |
+| `exactLocation` | string | No | Optional |
+| `coding` | string | No | Optional |
+| `type` | string | No | Optional |
+| `riskGrading` | string | No | Optional |
+| `result` | string | No | Optional |
+| `actualHarm` | string | No | Optional |
+| `potentialHarm` | string | No | Optional |
+| `details` | string | No | Optional |
+| `patientInvolved` | bool | No | Optional |
+| `patientTold` | bool | No | Optional |
+| `familyTold` | bool | No | Optional |
+| `whatFamilyTold` | string | No | Optional |
+| `incidentInvestigation` | string | No | Optional |
+| `reviewMeetingDate` | string | No | Optional |
+| `qualityAssuranceLead` | string | No | Optional |
+| `doctorNotified` | bool | No | Optional |
+| `meetingDiscussionPoints` | string | No | Optional |
+| `meetingActionPoints` | string | No | Optional |
+| `levelOfInvestigation` | string | No | Optional |
+
+**Output**:
+
+| Status | Response |
+|--------|----------|
+| `201 Created` | `{"message": "The death has been reported"}` |
+| `400 Bad Request` | `{"error": "A bad request was sent"}` |
+| `500 Internal Server Error` | `{"error": "..."}` |
+
+---
+
+### 2. Update Death Report
+
+| Attribute | Value |
+|-----------|-------|
+| **Method** | `PUT` |
+| **Path** | `/api/v1/deathreport` |
+| **Auth Required** | No |
+| **Role Required** | None (public endpoint) |
+| **Handler** | `cmd/deathreport.go:29` (`updateDeathReport`) |
+
+**Input Body** (`DeathReport` — must include `id`):
+
+Same fields as Create Death Report, plus `id` (required) to identify the report to update.
+
+**Output**:
+
+| Status | Response |
+|--------|----------|
+| `200 OK` | `{"message": "The death report has been updated"}` |
+| `400 Bad Request` | `{"error": "A bad request was passed: ..."}` |
+| `404 Not Found` | `{"error": "..."}` |
+| `500 Internal Server Error` | `{"error": "..."}` |
+
+---
+
+### 3. Get All Death Reports
+
+| Attribute | Value |
+|-----------|-------|
+| **Method** | `GET` |
+| **Path** | `/api/v1/deathreports` |
+| **Auth Required** | No |
+| **Role Required** | None (public endpoint) |
+| **Handler** | `cmd/deathreport.go:53` (`getDeathReports`) |
+
+**Query Parameters**:
+
+| Parameter | Type | Required | Default | Validation |
+|-----------|------|----------|---------|------------|
+| `page` | int | No | `1` | Minimum 1 |
+| `limit` | int | No | `10` | Minimum 1, maximum 50 |
+
+**Output** (`PaginatedDeathReportResponse`):
+
+| Status | Response |
+|--------|----------|
+| `200 OK` | `{"deathReports": {data: [...], pagination: {current_page, page_size, total_items, total_pages}}}` |
+| `500 Internal Server Error` | `{"error": "..."}` |
+
+---
+
+### 4. Search Death Reports
+
+| Attribute | Value |
+|-----------|-------|
+| **Method** | `GET` |
+| **Path** | `/api/v1/searchDeathReport` |
+| **Auth Required** | No |
+| **Role Required** | None (public endpoint) |
+| **Handler** | `cmd/deathreport.go:81` (`searchDeathReport`) |
+
+**Query Parameters**:
+
+| Parameter | Type | Required | Validation |
+|-----------|------|----------|------------|
+| `searchQuery` | string | No | Non-empty string triggers search; empty string returns all reports |
+
+**Output**:
+
+| Status | Response |
+|--------|----------|
+| `200 OK` | `{"deathReports": [{death report objects}]}` |
+| `500 Internal Server Error` | `{"error": "..."}` |
+
+---
+
 ## Authentication Middleware
 
 All protected user routes (except login) are guarded by `authMiddleware` (`cmd/middleware.go:12`). It:
@@ -322,5 +461,7 @@ Handlers then check `userRole` to enforce role-based access.
 | `cmd/auth.go` | Register and login handlers |
 | `cmd/users.go` | Update, disable, enable, get, and reset password handlers |
 | `cmd/middleware.go` | JWT authentication middleware |
-| `cmd/types.go` | Request/response DTOs (`RegisterRequest`, `UpdateRequest`, `DisableRequest`, `EnableRequest`, `ResetRequest`, `loginRequest`, `Claims`, `UserResetPassword`, `PaginatedUserResponse`) |
+| `cmd/types.go` | Request/response DTOs (`RegisterRequest`, `UpdateRequest`, `DisableRequest`, `EnableRequest`, `ResetRequest`, `loginRequest`, `Claims`, `UserResetPassword`, `PaginatedUserResponse`, `PaginatedDeathReportResponse`) |
+| `cmd/deathreport.go` | Death report handlers (`deathReport`, `updateDeathReport`, `getDeathReports`, `searchDeathReport`) |
+| `internal/db/deathreporting.go` | Death report database model and queries |
 | `internal/db/users.go` | Database model and queries for users |
