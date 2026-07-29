@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"issueTracking/internal/db"
 
@@ -45,6 +46,28 @@ func (a *application) updateDeathReport(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "The death report has been updated"})
+}
+
+func (a *application) getDeathReports(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 50 {
+		limit = 10
+	}
+
+	offset := (page - 1) * limit
+	ctx := c.Request.Context()
+	deathReports, err := a.models.DeathReport.GetDeathReports(ctx, limit, offset)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"deathReports": deathReports})
 }
 
 func (a *application) searchDeathReport(c *gin.Context) {
