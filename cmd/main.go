@@ -7,13 +7,11 @@ import (
 	"issueTracking/internal/env"
 	"issueTracking/internal/logger"
 
-	"github.com/joho/godotenv"
+	_ "github.com/joho/godotenv/autoload"
 )
 
 func main() {
 	logger.InitLogger()
-
-	_ = godotenv.Load()
 
 	pool, err := db.InitPool()
 	if err != nil {
