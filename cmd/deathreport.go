@@ -84,14 +84,14 @@ func (a *application) getDeathReports(c *gin.Context) {
 
 func (a *application) searchDeathReport(c *gin.Context) {
 	searchQuery := c.Query("searchQuery")
+	if searchQuery == "" {
+		a.getDeathReports(c)
+		return
+	}
 	dateFrom := c.Query("dateFrom")
 	dateTo := c.Query("dateTo")
+	ctx := c.Request.Context()
 	if dateFrom == "" && dateTo == "" {
-		if searchQuery == "" {
-			a.getDeathReports(c)
-			return
-		}
-		ctx := c.Request.Context()
 		deathReports, err := a.models.DeathReport.SearchDeathReports(ctx, searchQuery)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -100,4 +100,10 @@ func (a *application) searchDeathReport(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"deathReports": deathReports})
 		return
 	}
+	deathReports, err := a.models.DeathReport.SearchDeathReportsByDate(ctx, searchQuery, dateFrom, dateTo)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"deathReports": deathReports})
 }
