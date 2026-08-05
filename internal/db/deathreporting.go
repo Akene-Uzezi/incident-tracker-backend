@@ -295,6 +295,43 @@ func (m *DeathReportModel) SearchDeathReports(ctx context.Context, searchQuery s
 	return &deathReports, nil
 }
 
+func (m *DeathReportModel) SearchDeathReportsByDate(ctx context.Context, searchQuery, dateFrom, dateTo string) (*[]DeathReport, error) {
+	safeSearchQuery := fmt.Sprintf("%%%s%%", searchQuery)
+	query := `
+		SELECT * FROM death_reports
+		WHERE reported_date BETWEEN $1 AND $2
+		AND(
+			COALESCE(ref, '') || ' ' ||
+  		COALESCE(department, '') || ' ' ||
+  		COALESCE(location, '') || ' ' ||
+  		COALESCE(exact_location, '') || ' ' ||
+  		COALESCE(handler, '') || ' ' ||
+  		COALESCE(manager, '') || ' ' ||
+  		COALESCE(specialty, '') || ' ' ||
+  		COALESCE(coding, '') || ' ' ||
+  		COALESCE(category, '') || ' ' ||
+  		COALESCE(sub_category, '') || ' ' ||
+  		COALESCE(description, '') || ' ' ||
+  		COALESCE(details, '') || ' ' ||
+  		COALESCE(action_taken, '') || ' ' ||
+  		COALESCE(quality_assurance_lead, '') || ' ' ||
+  		COALESCE(incident_investigation, '')
+	) ILIKE $3;
+	`
+	rows, err := m.DB.Query(ctx, query, dateFrom, dateTo, safeSearchQuery)
+	if err != nil {
+		return nil, fmt.Errorf("database query error: %s", err)
+	}
+	defer rows.Close()
+
+	deathReports, err := pgx.CollectRows(rows, pgx.RowToStructByName[DeathReport])
+	if err != nil {
+		return nil, fmt.Errorf("unable to scan returned values to struct: %s", err)
+	}
+
+	return &deathReports, nil
+}
+
 func (m *DeathReportModel) FetchDeathReportsByDate(ctx context.Context, limit, offset int, dateFrom, dateTo string) (*[]DeathReport, int, int, error) {
 	var totalItems int
 	err := m.DB.QueryRow(ctx, "SELECT COUNT(*) FROM death_reports").Scan(&totalItems)
