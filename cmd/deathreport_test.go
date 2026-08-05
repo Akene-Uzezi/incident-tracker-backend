@@ -294,3 +294,23 @@ func TestSearchDeathReports(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 }
+
+func TestSearchDeathReportsByDate(t *testing.T) {
+	db.TruncateTables(t, testPool)
+
+	a := &application{
+		origins: "*",
+		models:  db.NewModels(testPool),
+	}
+	_ = insertDeathReportWithPayload(a, t)
+	dummyPayload, _ := json.Marshal(&map[string]any{
+		"test": "test",
+	})
+	r := gin.Default()
+	r.GET("/api/v1/deathreports", a.getDeathReports)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/deathreports?dateFrom=2026-07-29&dateTo=2026-08-05", bytes.NewBuffer(dummyPayload))
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
