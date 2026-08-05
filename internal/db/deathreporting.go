@@ -240,7 +240,7 @@ func (m *DeathReportModel) GetDeathReports(ctx context.Context, limit, offset in
 	}
 	query := `
 		SELECT * FROM death_reports
-		ORDER BY id DESC	
+		ORDER BY id DESC
 		LIMIT $1 OFFSET $2
 	`
 	rows, err := m.DB.Query(ctx, query, limit, offset)
@@ -293,4 +293,36 @@ func (m *DeathReportModel) SearchDeathReports(ctx context.Context, searchQuery s
 	}
 
 	return &deathReports, nil
+}
+
+func (m *DeathReportModel) FetchDeathReportsByDate(ctx context.Context, limit, offset int, dateFrom, dateTo string) (*[]DeathReport, int, int, error) {
+	var totalItems int
+	err := m.DB.QueryRow(ctx, "SELECT COUNT(*) FROM death_reports").Scan(&totalItems)
+	if err != nil {
+		return nil, 0, 0, fmt.Errorf("database query error: %w", err)
+	}
+	query := `
+		SELECT * FROM death_reports
+		WHERE reported_date BETWEEN $1 AND $2
+		ORDER BY id DESC
+		LIMIT $3 OFFSET $4
+	`
+
+	rows, err := m.DB.Query(ctx, query, dateFrom, dateTo, limit, offset)
+	if err != nil {
+		return nil, 0, 0, fmt.Errorf("database query error: %w", err)
+	}
+	defer rows.Close()
+
+	deathReports, err := pgx.CollectRows(rows, pgx.RowToStructByName[DeathReport])
+	if err != nil {
+		return nil, 0, 0, fmt.Errorf("failed to scan rows into struct: %w", err)
+	}
+
+	totalPages := int(math.Ceil(float64(totalItems) / float64(limit)))
+	if totalPages == 0 {
+		totalPages = 1
+	}
+
+	return &deathReports, totalPages, totalItems, nil
 }
