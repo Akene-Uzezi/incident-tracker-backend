@@ -5,7 +5,7 @@
 The Issue Tracker is a RESTful API for managing workplace incidents and safety reports built with Go, Gin, and PostgreSQL.
 
 **Code Metrics:**
-- Total Go code: 3646 lines
+- Total Go code: 4103 lines
 - 28 Go source files
 - Architecture: Clean layered (presentation → application → data → infrastructure)
 
@@ -33,7 +33,7 @@ go vet ./...
 ## Docker Commands
 
 ```bash
-# Start all services (API at localhost:3002)
+# Start all services (API at localhost:3002, internally port 3001)
 docker compose up -d
 
 # Stop services
@@ -50,8 +50,23 @@ docker compose logs -f
 
 ```bash
 # Access PostgreSQL shell
+docker exec -it issuetracker_db psql -U tracker_user -d issuetracker
+
+# Or via local script
 ./scripts/login.sh
 ```
+
+## Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `./scripts/runtests.sh` | Run tests verbosely |
+| `./scripts/login.sh` | Open PostgreSQL shell in Docker container |
+| `./scripts/createtable.sh` | Create database tables |
+| `./scripts/resetdb.sh` | Reset database |
+| `./scripts/restart.sh` | Restart services |
+| `./scripts/commit.sh` | Commit helper |
+| `./scripts/format.sh` | Format code |
 
 ## API Testing
 
@@ -80,6 +95,10 @@ curl -X POST http://localhost:3002/api/v1/incidents \
     "principalType": "patient",
     "patientId": "P12345",
     "patientWardDept": "Ward A",
+    "staffJobTitle": "Nurse",
+    "staffPhone": "555-0100",
+    "staffPlaceOfWork": "Ward A",
+    "staffSite": "Main Hospital",
     "peopleInvolved": "Nurse Smith",
     "dateOfIncident": "2026-06-09",
     "timeOfIncident": "14:00",
@@ -96,41 +115,143 @@ curl -X POST http://localhost:3002/api/v1/incidents \
     "prescribingDoctor": "Dr. Brown",
     "treatmentReceived": "First Aid",
     "equipmentInvolved": "No",
+    "equipmentModel": "Model X",
     "equipmentSentForRepair": false,
     "equipmentWithdrawn": false,
     "equipmentRetained": false,
+    "equipmentNumber": "EQ-123",
     "isMedicalDevice": "No",
     "reporterName": "Jane Reporter",
     "reporterDesignation": "Nurse",
     "signature": true,
     "reporterInfo": "jane@example.com",
     "date": "2026-06-09",
-    "severityLevel": "minor"
+    "severityLevel": "minor",
+    "incidentStatus": "unresolved"
   }'
 
-# Add comment to incident (requires manager or admin)
+# Get incidents (paginated, requires auth)
+curl "http://localhost:3002/api/v1/incidents?page=1&limit=10" -H "Authorization: Bearer $TOKEN"
+
+# Search incidents (requires auth)
+curl "http://localhost:3002/api/v1/searchIncidents?searchQuery=Ward%20A" -H "Authorization: Bearer $TOKEN"
+
+# Update incident status (requires admin or superadmin; body field is `incidentStatus`)
+curl -X PATCH http://localhost:3002/api/v1/incidents/1/status \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"incidentStatus":"resolved"}'
+
+# Get all users (paginated, requires superadmin)
+curl "http://localhost:3002/api/v1/users?page=1&limit=10" -H "Authorization: Bearer $TOKEN"
+
+# Get user by email (requires superadmin)
+curl "http://localhost:3002/api/v1/user?email=test@example.com" -H "Authorization: Bearer $TOKEN"
+
+# Search users (requires superadmin)
+curl "http://localhost:3002/api/v1/searchUsers?searchQuery=John" -H "Authorization: Bearer $TOKEN"
+
+# Update user (requires superadmin)
+curl -X PUT http://localhost:3002/api/v1/auth/update \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com","name":"New Name","role":"admin","department":"IT"}'
+
+# Disable user (requires superadmin)
+curl -X PUT http://localhost:3002/api/v1/auth/disable \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com"}'
+
+# Enable user (requires superadmin)
+curl -X PUT http://localhost:3002/api/v1/auth/enable \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com"}'
+
+# Reset user password (requires superadmin)
+curl -X PUT http://localhost:3002/api/v1/auth/resetpassword \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com","password":"newpassword123"}'
+
+# Self-reset password (requires auth)
+curl -X PUT http://localhost:3002/api/v1/auth/userResetPassword \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"self@example.com","newPassword":"newpassword123"}'
+
+# Submit incident management report (requires admin or manager)
+curl -X POST http://localhost:3002/api/v1/incidents/1/management \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "impactOnService": "Minor delay",
+    "contributoryFactors": "Understaffing",
+    "actionsTakenOutcomes": "Patient stabilized",
+    "recommendations": "Increase staffing",
+    "lessonsLearned": "Need better protocols",
+    "informedPatient": true,
+    "informedRelative": false,
+    "informedSeniorManager": true,
+    "informedPharmacist": false,
+    "policeIncidentNumber": "",
+    "informedOther": "",
+    "riskSeverity": 3,
+    "riskLikelihood": 2,
+    "riskRating": 6,
+    "ohsAbsenceOver3Days": false,
+    "ohsActOfViolenceOrDanger": false,
+    "ohsHospitalizationOver24Hours": false,
+    "ohsStaffName": "",
+    "ohsStaffDob": "",
+    "ohsStaffAddress": "",
+    "managerName": "Jane Manager",
+    "managerSignature": true,
+    "managerDesignation": "Clinical Manager",
+    "managerDate": "2026-06-09"
+  }'
+
+# Get incident management report (requires auth)
+curl "http://localhost:3002/api/v1/incidents/1/management" -H "Authorization: Bearer $TOKEN"
+
+# Update incident management report (requires admin or manager)
+curl -X PUT http://localhost:3002/api/v1/incidents/1/management \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "impactOnService": "Minor delay",
+    "contributoryFactors": "Understaffing",
+    "actionsTakenOutcomes": "Patient stabilized",
+    "recommendations": "Increase staffing",
+    "lessonsLearned": "Need better protocols",
+    "informedPatient": true,
+    "informedRelative": false,
+    "informedSeniorManager": true,
+    "informedPharmacist": false,
+    "riskSeverity": 3,
+    "riskLikelihood": 2,
+    "riskRating": 6,
+    "ohsAbsenceOver3Days": false,
+    "ohsActOfViolenceOrDanger": false,
+    "ohsHospitalizationOver24Hours": false,
+    "managerName": "Jane Manager",
+    "managerSignature": true,
+    "managerDesignation": "Clinical Manager",
+    "managerDate": "2026-06-09"
+  }'
+
+# Get incident management logs (requires admin or manager)
+curl "http://localhost:3002/api/v1/incidents/1/managementlogs" -H "Authorization: Bearer $TOKEN"
+
+# Add comment to incident (requires admin or manager)
 curl -X POST http://localhost:3002/api/v1/incidents/comments \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"incidentId": 1, "userId": 2, "comment": "Follow up needed"}'
 
-# Get incidents (requires auth)
-curl http://localhost:3002/api/v1/incidents -H "Authorization: Bearer $TOKEN"
-
-# Update incident status (requires auth; reporter/supervisor/manager roles forbidden)
-curl -X PATCH http://localhost:3002/api/v1/incidents/1/status \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"status":"resolved"}'
-
-# Get user info (requires superadmin role)
-curl "http://localhost:3002/api/v1/user?email=test@example.com" -H "Authorization: Bearer $TOKEN"
-
 # Get comments for incident (requires admin or manager)
 curl "http://localhost:3002/api/v1/incidents/comments?incidentId=1" -H "Authorization: Bearer $TOKEN"
-
-# Get incident management logs (requires admin or manager role)
-curl "http://localhost:3002/api/v1/incidents/1/managementlogs" -H "Authorization: Bearer $TOKEN"
 
 # Report a death (no auth required)
 curl -X POST http://localhost:3002/api/v1/deathreport \
@@ -213,10 +334,10 @@ curl -X PUT http://localhost:3002/api/v1/deathreport \
     "levelOfInvestigation": "Level"
   }'
 
-# Get all death reports (no auth required)
+# Get all death reports (paginated, no auth required)
 curl "http://localhost:3002/api/v1/deathreports?page=1&limit=10"
 
-# Search death reports (no auth required)
+# Search death reports (no auth required; supports dateFrom/dateTo)
 curl "http://localhost:3002/api/v1/searchDeathReport?searchQuery=DR-001"
 ```
 
@@ -224,11 +345,197 @@ curl "http://localhost:3002/api/v1/searchDeathReport?searchQuery=DR-001"
 
 | Role | Permissions |
 |------|-------------|
-| superadmin | All endpoints including user management (register, update, disable, enable, reset password, get user), report incidents, view all incidents, update any incident status, submit incident management reports, update incident management reports, add comments, view comments |
+| superadmin | All endpoints including user management (register, update, disable, enable, reset password, get user, search users), report incidents, view all incidents, update any incident status, submit incident management reports, update incident management reports, add comments, view comments |
 | admin | Report incidents, view all incidents, update any incident status, submit incident management reports, update incident management reports, add comments, view comments |
 | supervisor | Report incidents, view own department incidents (matched via `incident_ward_dept`, `patient_ward_dept`, or `staff_place_of_work`) |
 | manager | Report incidents, view all incidents, view incident management reports and logs, add comments, view comments, submit incident management reports, update incident management reports |
 | reporter | Report incidents via public endpoint only, view own department incidents |
+
+**Notes:**
+- Only `superadmin` and `admin` can update incident status (`PATCH /incidents/:id/status`). `supervisor`, `manager`, and `reporter` are forbidden.
+- `GET /incidents` returns paginated results. `supervisor` and `reporter` are scoped to their department.
+- `GET /incidents` supports `dateFrom` and `dateTo` query parameters for filtering.
+- JWT tokens expire after 72 hours.
+
+## Auth Endpoints
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/v1/auth/register` | superadmin | Register new user |
+| POST | `/api/v1/auth/login` | None | Login, returns JWT + user |
+| PUT | `/api/v1/auth/update` | superadmin | Update user name/role/department |
+| PUT | `/api/v1/auth/disable` | superadmin | Disable a user account |
+| PUT | `/api/v1/auth/enable` | superadmin | Enable a disabled user account |
+| PUT | `/api/v1/auth/resetpassword` | superadmin | Admin-reset any user password |
+| PUT | `/api/v1/auth/userResetPassword` | authenticated | Self-service password change |
+
+### Register Request
+
+```go
+type RegisterRequest struct {
+    Name       string `json:"name" binding:"required"`
+    Email      string `json:"email" binding:"required"`
+    Password   string `json:"password" binding:"omitempty,min=8"`
+    Role       string `json:"role" binding:"required"`
+    Department string `json:"department" binding:"required"`
+}
+```
+
+### Update Request
+
+```go
+type UpdateRequest struct {
+    Name       string `json:"name" binding:"required"`
+    Email      string `json:"email" binding:"required"`
+    Role       string `json:"role" binding:"required"`
+    Department string `json:"department" binding:"required"`
+}
+```
+
+### Disable Request
+
+```go
+type DisableRequest struct {
+    Email string `json:"email" binding:"required"`
+}
+```
+
+### Enable Request
+
+```go
+type EnableRequest struct {
+    Email string `json:"email" binding:"required"`
+}
+```
+
+### Reset Request
+
+```go
+type ResetRequest struct {
+    Email    string `json:"email" binding:"required"`
+    Password string `json:"password" binding:"required,min=8"`
+}
+```
+
+### User Self Reset Password
+
+```go
+type UserResetPassword struct {
+    Email       string `json:"email" binding:"required"`
+    NewPassword string `json:"newPassword" binding:"required"`
+}
+```
+
+## Incident Report
+
+### API Endpoints
+
+**POST /api/v1/incidents** - Create incident report
+- Requires: No authentication
+- Request body: `IncidentReport` struct
+- Returns: Created `IncidentReport` with generated `id`
+
+**GET /api/v1/incidents** - List incidents (paginated)
+- Requires: Authentication
+- Query Parameters: `page` (default 1), `limit` (default 10, max 50), `dateFrom`, `dateTo`
+- Returns: `PaginatedIncidentResponse`
+
+**GET /api/v1/searchIncidents** - Search incidents
+- Requires: Authentication
+- Query Parameters: `searchQuery`
+- Returns: `{"incidents": [...]}`
+
+**PATCH /api/v1/incidents/:id/status** - Update incident status
+- Requires: `admin` or `superadmin` role
+- Request body: `IncidentStatusUpdate`
+
+### IncidentReport Struct
+
+```go
+type IncidentReport struct {
+    Id                     int            `json:"id"`
+    PrincipalName          string         `json:"principalName"`
+    PrincipalGender        string         `json:"principalGender"`
+    PrincipalDob           string         `json:"principalDob"`
+    PrincipalType          string         `json:"principalType"`
+    PatientId              string         `json:"patientId,omitempty"`
+    PatientWardDept        string         `json:"patientWardDept,omitempty"`
+    StaffJobTitle          string         `json:"staffJobTitle,omitempty"`
+    StaffPhone             string         `json:"staffPhone,omitempty"`
+    StaffPlaceOfWork       string         `json:"staffPlaceOfWork,omitempty"`
+    StaffSite              string         `json:"staffSite,omitempty"`
+    PeopleInvolved         string         `json:"peopleInvolved"`
+    DateOfIncident         string         `json:"dateOfIncident"`
+    TimeOfIncident         string         `json:"timeOfIncident"`
+    LocationOfIncident     string         `json:"locationOfIncident"`
+    IncidentWardDept       string         `json:"incidentWardDept"`
+    Witnesses              string         `json:"witnesses,omitempty"`
+    WitnessType            string         `json:"witnessType,omitempty"`
+    WitnessWardDept        string         `json:"witnessWardDept,omitempty"`
+    WitnessJobTitle        string         `json:"witnessJobTitle,omitempty"`
+    WitnessPhone           string         `json:"witenssPhone,omitempty"`
+    IsNearMiss             bool           `json:"isNearMiss"`
+    CauseGroup             string         `json:"causeGroup"`
+    Causes                 string         `json:"causes"`
+    PrescribingDoctor      string         `json:"prescribingDoctor"`
+    TreatmentReceived      string         `json:"treatmentReceived"`
+    EquipmentInvolved      string         `json:"equipmentInvolved"`
+    EquipmentModel         string         `json:"equipmentModel,omitempty"`
+    EquipmentSentForRepair bool           `json:"equipmentSentForRepair"`
+    EquipmentWithdrawn     bool           `json:"equipmentWithdrawn"`
+    EquipmentRetained      bool           `json:"equipmentRetained"`
+    EquipmentNumber        string         `json:"equipmentNumber,omitempty"`
+    IsMedicalDevice        string         `json:"isMedicalDevice,omitempty"`
+    ReporterName           string         `json:"reporterName" binding:"required"`
+    ReporterDesignation    string         `json:"reporterDesignation" binding:"required"`
+    Signature              bool           `json:"signature" binding:"required"`
+    ReporterInfo           string         `json:"reporterInfo" binding:"required"`
+    ReporterDate           string         `json:"date" binding:"required"`
+    SeverityLevel          SeverityLevel  `json:"severityLevel"`
+    IncidentStatus         IncidentStatus `json:"incidentStatus"`
+}
+```
+
+### Severity Levels
+
+| Value | Description |
+|-------|-------------|
+| `near miss` | Near miss |
+| `minor` | Minor |
+| `major` | Major |
+| `critical` | Critical |
+
+### Incident Status
+
+| Value | Description |
+|-------|-------------|
+| `unresolved` | Unresolved |
+| `inprogress` | In Progress |
+| `resolved` | Resolved |
+
+### Incident Status Update
+
+```go
+type IncidentStatusUpdate struct {
+    Status string `json:"incidentStatus" binding:"required"`
+}
+```
+
+### Paginated Incident Response
+
+```go
+type PaginatedIncidentResponse struct {
+    Data       []db.IncidentReport `json:"data"`
+    Pagination PaginationMeta      `json:"pagination"`
+}
+
+type PaginationMeta struct {
+    CurrentPage int `json:"current_page"`
+    PageSize    int `json:"page_size"`
+    TotalItems  int `json:"total_items"`
+    TotalPages  int `json:"total_pages"`
+}
+```
 
 ## Death Report
 
@@ -239,18 +546,22 @@ The death report feature captures detailed information about workplace deaths. T
 **POST /api/v1/deathreport** - Create death report
 - Requires: No authentication
 - Request body: `DeathReport` struct
+- Returns: `{"message": "The death has been reported"}`
 
 **PUT /api/v1/deathreport** - Update death report
 - Requires: No authentication
 - Request body: `DeathReport` struct (must include `id`)
+- Returns: `{"message": "The death report has been updated"}`
 
 **GET /api/v1/deathreports** - Get all death reports (paginated)
 - Requires: No authentication
-- Query Parameters: `page` (default 1), `limit` (default 10, max 50)
+- Query Parameters: `page` (default 1), `limit` (default 10, max 50), `dateFrom`, `dateTo`
+- Returns: `{"deathReports": PaginatedDeathReportResponse}`
 
 **GET /api/v1/searchDeathReport** - Search death reports
 - Requires: No authentication
-- Query Parameters: `searchQuery` (if empty, returns all reports)
+- Query Parameters: `searchQuery`, `dateFrom`, `dateTo`
+- Returns: `{"deathReports": [...]}`
 
 ### DeathReport Struct
 
@@ -337,7 +648,7 @@ The incident management report captures follow-up documentation after an inciden
 ### API Endpoints
 
 **POST /api/v1/incidents/:id/management** - Create management report
-- Requires: admin or manager role
+- Requires: `admin` or `manager` role
 - Request body: `IncidentManagement` struct
 
 **GET /api/v1/incidents/:id/management** - Retrieve management report
@@ -345,8 +656,12 @@ The incident management report captures follow-up documentation after an inciden
 - Response: `IncidentManagement` struct
 
 **PUT /api/v1/incidents/:id/management** - Update existing report
-- Requires: manager or admin role
+- Requires: `manager` or `admin` role
 - Request body: `IncidentManagement` struct
+
+**GET /api/v1/incidents/:id/managementlogs** - Retrieve change logs for a management report
+- Requires: `admin` or `manager` role
+- Response: `[]IncidentManagementLogs`
 
 ### IncidentManagement Struct
 
@@ -381,10 +696,67 @@ type IncidentManagement struct {
 }
 ```
 
+### IncidentManagementLogs Struct
+
+```go
+type IncidentManagementLogs struct {
+    Id         int                `json:"id"`
+    IncidentId int                `json:"incidentId"`
+    ChangedBy  int                `json:"changedBy"`
+    Action     string             `json:"action"`
+    OldValue   IncidentManagement `json:"oldValue"`
+    NewValue   IncidentManagement `json:"newValue"`
+    CreatedAt  time.Time          `json:"createdAt"`
+    UserName   string             `json:"userName"`
+}
+```
+
+## Comments
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/v1/incidents/comments` | `admin` or `manager` | Add a comment |
+| GET | `/api/v1/incidents/comments?incidentId=1` | `admin` or `manager` | Get comments for incident |
+
+### Comment Struct
+
+```go
+type Comment struct {
+    Id              int    `json:"id"`
+    IncidentId      int    `json:"incidentId" binding:"required"`
+    UserId          int    `json:"userId" binding:"required"`
+    Comment         string `json:"comment" binding:"required"`
+    CommentUserName string `json:"commentUserName"`
+    CommentUserRole string `json:"commentUserRole"`
+}
+```
+
+## Users
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/v1/users?page=1&limit=10` | `superadmin` | List all users (paginated) |
+| GET | `/api/v1/user?email=test@example.com` | `superadmin` | Get single user by email |
+| GET | `/api/v1/searchUsers?searchQuery=John` | `superadmin` | Search users |
+
+### User Struct
+
+```go
+type User struct {
+    Id         int    `json:"id"`
+    Name       string `json:"name"`
+    Email      string `json:"email"`
+    Role       string `json:"role"`
+    Department string `json:"department"`
+    Disabled   bool   `json:"disabled"`
+}
+```
+
 ## Default Credentials
 
 A superadmin user is created by default:
 - Email: `admin@example.com`
-- Password: The default password is hashed with bcrypt and stored in `tables.sql`. Check the database or reset it via code to set a known password.
+- Password: `redeemershealthvillage`
+- Bcrypt hash stored in `tables.sql`: `$2a$10$UQgnunKYIsM.hTWtjYooG.SPNKBqywEbOKddh1tU4tJuDiqfcn5Dm`
 
 **Note:** New users registered via `/api/v1/auth/register` are assigned a default password of `redeemershealthvillage` if none is provided. This is separate from the pre-seeded superadmin.
