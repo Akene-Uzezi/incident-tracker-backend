@@ -55,16 +55,16 @@ func (a *application) getDeathReports(c *gin.Context) {
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	dateFrom := c.Query("dateFrom")
 	dateTo := c.Query("dateTo")
-	if dateFrom == "" && dateTo == "" {
-		if page < 1 {
-			page = 1
-		}
-		if limit < 1 || limit > 50 {
-			limit = 10
-		}
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 50 {
+		limit = 10
+	}
 
-		offset := (page - 1) * limit
-		ctx := c.Request.Context()
+	offset := (page - 1) * limit
+	ctx := c.Request.Context()
+	if dateFrom == "" && dateTo == "" {
 		deathReports, totalPages, totalItems, err := a.models.DeathReport.GetDeathReports(ctx, limit, offset)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -79,7 +79,22 @@ func (a *application) getDeathReports(c *gin.Context) {
 				TotalPages:  totalPages,
 			},
 		}})
+		return
 	}
+	deatReports, totalPages, totalItems, err := a.models.DeathReport.FetchDeathReportsByDate(ctx, limit, offset, dateFrom, dateTo)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"deathReports": PaginatedDeathReportResponse{
+		Data: deatReports,
+		Pagination: PaginationMeta{
+			CurrentPage: page,
+			PageSize:    limit,
+			TotalItems:  totalItems,
+			TotalPages:  totalPages,
+		},
+	}})
 }
 
 func (a *application) searchDeathReport(c *gin.Context) {
